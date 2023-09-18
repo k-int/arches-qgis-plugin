@@ -77,7 +77,7 @@
                      </widget>
                     </item>
                     <item>
-                     <widget class="QLineEdit" name="lineEdit_3"/>
+                     <widget class="QLineEdit" name="arches_server_input"/>
                     </item>
                    </layout>
                   </widget>
@@ -99,7 +99,7 @@
                      </widget>
                     </item>
                     <item>
-                     <widget class="QLineEdit" name="lineEdit"/>
+                     <widget class="QLineEdit" name="username_input"/>
                     </item>
                    </layout>
                   </widget>
@@ -121,7 +121,7 @@
                      </widget>
                     </item>
                     <item>
-                     <widget class="QLineEdit" name="lineEdit_2"/>
+                     <widget class="QLineEdit" name="password_input"/>
                     </item>
                    </layout>
                   </widget>
@@ -148,7 +148,7 @@
                     <enum>Qt::Horizontal</enum>
                    </property>
                    <property name="standardButtons">
-                    <set>QDialogButtonBox::Cancel|QDialogButtonBox::Save</set>
+                    <set>QDialogButtonBox::Cancel|QDialogButtonBox::Reset|QDialogButtonBox::Save</set>
                    </property>
                    <property name="centerButtons">
                     <bool>true</bool>
@@ -178,7 +178,7 @@
                </widget>
               </item>
               <item>
-               <widget class="QTextEdit" name="textEdit"/>
+               <widget class="QTextEdit" name="connection_status"/>
               </item>
              </layout>
             </widget>

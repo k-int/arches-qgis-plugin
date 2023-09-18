@@ -30,6 +30,7 @@ from .resources import *
 # Import the code for the dialog
 from .arches_project_dialog import ArchesProjectDialog
 import os.path
+import requests
 
 
 class ArchesProject:
@@ -189,6 +190,15 @@ class ArchesProject:
             self.first_start = False
             self.dlg = ArchesProjectDialog()
 
+        self.dlg.tabWidget.setCurrentIndex(0)
+        print("AAAA")
+
+        self.dlg.arches_server_input.clear()
+        self.dlg.arches_server_input.setCurrentIndex(0)
+        print(self.dlg.arches_server_input)
+        print(vars(self.dlg.arches_server_input))
+
+
         # show the dialog
         self.dlg.show()
         # Run the dialog event loop
@@ -198,3 +208,12 @@ class ArchesProject:
             # Do something useful here - delete the line containing pass and
             # substitute with your code.
             pass
+
+    def arches_connection(self, url, username, password):
+        files = {
+            'username': (None, username),
+            'password': (None, password),
+        }
+        response = requests.post(url, data=files)
+        clientid = response.json()["clientid"]
+

@@ -191,13 +191,10 @@ class ArchesProject:
             self.dlg = ArchesProjectDialog()
 
         self.dlg.tabWidget.setCurrentIndex(0)
-        print("AAAA")
 
-        self.dlg.arches_server_input.clear()
-        self.dlg.arches_server_input.setCurrentIndex(0)
-        print(self.dlg.arches_server_input)
-        print(vars(self.dlg.arches_server_input))
-
+        self.dlg.btnSave.clicked.connect(self.arches_connection_save)
+        self.dlg.btnReset.clicked.connect(self.arches_connection_reset)
+    
 
         # show the dialog
         self.dlg.show()
@@ -209,11 +206,70 @@ class ArchesProject:
             # substitute with your code.
             pass
 
-    def arches_connection(self, url, username, password):
-        files = {
-            'username': (None, username),
-            'password': (None, password),
-        }
-        response = requests.post(url, data=files)
-        clientid = response.json()["clientid"]
+    def arches_connection_reset(self):
+        """Reset Arches connection inputs"""
+        self.dlg.connection_status.setText("")
+        self.dlg.arches_server_input.setText("")
+        self.dlg.username_input.setText("")
+        self.dlg.password_input.setText("")
 
+
+    def arches_connection_save(self):
+        """Data for connection to Arches project server"""
+
+        # strip and remove ending slash
+        def format_url():
+            formatted_url = self.dlg.arches_server_input.text().strip()
+            if formatted_url[-1] == "/":
+                formatted_url = formatted_url[:-1]
+            return formatted_url
+
+        # once Oauth registered the clientID can be fetched and used
+        def get_clientid(url):
+            try:
+                files = {
+                    'username': (None, self.dlg.username_input.text()),
+                    'password': (None, self.dlg.password_input.text()),
+                }
+                response = requests.post(url+"/auth/get_client_id", data=files)
+                clientid = response.json()["clientid"]
+                return clientid
+            except:
+                self.dlg.connection_status.append("Can't get client ID - check the Arches Oauth application.")
+                return None
+            
+        def get_token(url, clientid):
+            try:
+                files = {
+                    'username': (None, self.dlg.username_input.text()),
+                    'password': (None, self.dlg.password_input.text()),
+                    'client_id': (None, clientid),
+                    'grant_type': (None, "password")
+                }
+                response = requests.post(url+"/o/token/", data=files)
+                results = response.json()
+                return results
+            except:
+                self.dlg.connection_status.append("Can't get token.")
+                return None
+
+        # reset connection status on button press
+        self.dlg.connection_status.setText("")
+
+        if self.dlg.arches_server_input.text() == "":
+            self.dlg.connection_status.append("Please enter the URL to your Arches project.")
+        if self.dlg.username_input.text() == "":    
+            self.dlg.connection_status.append("Please enter your username.")
+        if self.dlg.password_input.text() == "":
+            self.dlg.connection_status.append("Please enter your password.")
+
+        if self.dlg.arches_server_input.text() != "":
+            formatted_url = format_url()
+            try:
+                clientid = get_clientid(formatted_url)
+                if clientid:
+                    token_data = get_token(formatted_url, clientid)
+                
+                self.dlg.connection_status.append("Connected to Arches instance.")
+            except:
+                self.dlg.connection_status.append("Could not connect to Arches instance.")

@@ -24,13 +24,16 @@
 from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction
+from qgis.core import QgsProject
 
 # Initialize Qt resources from file resources.py
 from .resources import *
 # Import the code for the dialog
 from .arches_project_dialog import ArchesProjectDialog
 import os.path
+
 import requests
+from datetime import datetime
 
 
 class ArchesProject:
@@ -67,6 +70,12 @@ class ArchesProject:
         # Check if plugin was started the first time in current QGIS session
         # Must be set in initGui() to survive plugin reloads
         self.first_start = None
+
+        # Cache connection details to prevent firing duplicate connections
+        self.arches_connection_cache = {}
+        # Store token data to avoid regenerating every connection
+        self.arches_token = {}
+        self.arches_graphs_list = []
 
     # noinspection PyMethodMayBeStatic
     def tr(self, message):
@@ -194,7 +203,17 @@ class ArchesProject:
 
         self.dlg.btnSave.clicked.connect(self.arches_connection_save)
         self.dlg.btnReset.clicked.connect(self.arches_connection_reset)
-    
+
+        # Create resource
+        self.dlg.createResModelSelect.setEnabled(False)
+        self.dlg.createResFeatureSelect.setEnabled(False)
+        self.dlg.addNewRes.setEnabled(False)
+        self.dlg.resetNewResSelection.setEnabled(False)
+        self.dlg.createResConnectionStatus.setText("Not connected to Arches instance.")
+            
+        self.dlg.createReloadConnection.clicked.connect(self.createResource)
+
+        
 
         # show the dialog
         self.dlg.show()
@@ -205,6 +224,23 @@ class ArchesProject:
             # Do something useful here - delete the line containing pass and
             # substitute with your code.
             pass
+
+        
+
+    def createResource(self):
+        self.dlg.createResModelSelect.clear()
+        if self.arches_token:
+            self.dlg.createResConnectionStatus.setText("Connected to Arches instance.")
+
+            layers = QgsProject.instance().layerTreeRoot().children()
+            self.dlg.createResFeatureSelect.setEnabled(True)
+            # self.dlg.createResFeatureSelect.clear()
+            self.dlg.createResFeatureSelect.addItems([layer.name() for layer in layers])
+
+            if self.arches_graphs_list:
+                self.dlg.createResModelSelect.setEnabled(True)
+                self.dlg.createResModelSelect.addItems([graph["name"] for graph in self.arches_graphs_list])
+
 
     def arches_connection_reset(self):
         """Reset Arches connection inputs"""
@@ -235,7 +271,7 @@ class ArchesProject:
                 clientid = response.json()["clientid"]
                 return clientid
             except:
-                self.dlg.connection_status.append("Can't get client ID - check the Arches Oauth application.")
+                self.dlg.connection_status.append("Can't get client ID. Is the Arches instance running? If so, check the instance has a registered Oauth application.")
                 return None
             
         def get_token(url, clientid):
@@ -247,11 +283,30 @@ class ArchesProject:
                     'grant_type': (None, "password")
                 }
                 response = requests.post(url+"/o/token/", data=files)
-                results = response.json()
-                return results
+                self.arches_token = response.json()
+                self.arches_token["time"] = str(datetime.now())
             except:
                 self.dlg.connection_status.append("Can't get token.")
-                return None
+
+        def get_graphs(url):
+            try:
+                response = requests.get("%s/graphs/" % (url))
+                graphids = [x["graphid"] for x in response.json() if x["graphid"] != "ff623370-fa12-11e6-b98b-6c4008b05c4c"]
+
+                for graph in graphids:
+                    contains_geom = False
+                    req = requests.get("%s/graphs/%s" % (url, graph))
+                    for nodes in req.json()["graph"]["nodes"]:
+                        if nodes["datatype"] == "geojson-feature-collection":
+                            contains_geom=True
+
+                    if contains_geom == True:
+                        self.arches_graphs_list.append({
+                            "graphid":graph,
+                            "name":req.json()["graph"]["name"]
+                        })
+            except:
+                pass
 
         # reset connection status on button press
         self.dlg.connection_status.setText("")
@@ -263,13 +318,40 @@ class ArchesProject:
         if self.dlg.password_input.text() == "":
             self.dlg.connection_status.append("Please enter your password.")
 
+        # URL field has data in
         if self.dlg.arches_server_input.text() != "":
             formatted_url = format_url()
+
             try:
                 clientid = get_clientid(formatted_url)
                 if clientid:
-                    token_data = get_token(formatted_url, clientid)
+                    # If client id NOT None then connection has been made
+                    # check cache first before firing connection again
+                    if self.arches_connection_cache:
+                        if (self.dlg.arches_server_input.text() == self.arches_connection_cache["url"] and
+                            self.dlg.username_input.text() == self.arches_connection_cache["username"]):
+                            print("Unchanged inputs")
+                            return            
+
+                    get_token(formatted_url, clientid)
+                    get_graphs(formatted_url)
+
+                    self.dlg.connection_status.append("Connected to Arches instance.")                    
+                    # Store for preventing duplicate connection requests
+                    self.arches_connection_cache = {"url": self.dlg.arches_server_input.text(),
+                                                    "username": self.dlg.username_input.text()}
                 
-                self.dlg.connection_status.append("Connected to Arches instance.")
+                else:
+                    # If clientid is None i.e no connection, reset cache and token to {}
+                    self.arches_connection_cache = {}
+                    self.arches_token = {}
+                    self.arches_graphs_list = []
+
             except:
+                # Connection couldn't be made so reset everything 
                 self.dlg.connection_status.append("Could not connect to Arches instance.")
+                self.arches_token = {}
+                self.arches_graphs_list = []
+                return False
+
+

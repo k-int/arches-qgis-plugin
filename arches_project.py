@@ -24,7 +24,7 @@
 from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction
-from qgis.core import QgsProject
+from qgis.core import QgsProject, QgsVectorLayer
 
 # Initialize Qt resources from file resources.py
 from .resources import *
@@ -32,6 +32,7 @@ from .resources import *
 from .arches_project_dialog import ArchesProjectDialog
 import os.path
 
+#from shapely import GeometryCollection
 import requests
 from datetime import datetime
 
@@ -211,9 +212,15 @@ class ArchesProject:
         self.dlg.resetNewResSelection.setEnabled(False)
         self.dlg.createResConnectionStatus.setText("Not connected to Arches instance.")
             
-        self.dlg.createReloadConnection.clicked.connect(self.createResource)
+        self.dlg.createReloadConnection.clicked.connect(self.refresh_selection)
 
-        
+        # to run when layer is changed
+        self.dlg.createResFeatureSelect.currentIndexChanged.connect(self.update_map_layers)
+        # to run when graph is changed
+        self.dlg.createResModelSelect.currentIndexChanged.connect(self.update_graph_options)
+
+        self.dlg.addNewRes.clicked.connect(self.create_resource)
+
 
         # show the dialog
         self.dlg.show()
@@ -225,21 +232,86 @@ class ArchesProject:
             # substitute with your code.
             pass
 
-        
+    def update_map_layers(self):
+        selectedLayerIndex = self.dlg.createResFeatureSelect.currentIndex()
+        selectedLayer = self.layers[selectedLayerIndex]
 
-    def createResource(self):
+    def update_graph_options(self):
+        selectedGraphIndex = self.dlg.createResModelSelect.currentIndex()
+        selectedGraph = self.arches_graphs_list[selectedGraphIndex]    
+
+
+    def refresh_selection(self):
         self.dlg.createResModelSelect.clear()
         if self.arches_token:
             self.dlg.createResConnectionStatus.setText("Connected to Arches instance.")
 
-            layers = QgsProject.instance().layerTreeRoot().children()
-            self.dlg.createResFeatureSelect.setEnabled(True)
-            # self.dlg.createResFeatureSelect.clear()
-            self.dlg.createResFeatureSelect.addItems([layer.name() for layer in layers])
+            all_layers = list(QgsProject.instance().mapLayers().values())
+            self.layers = [layer for layer in all_layers if isinstance(layer,QgsVectorLayer)]
 
+            self.dlg.createResFeatureSelect.setEnabled(True)
+            self.dlg.createResFeatureSelect.clear()
+            self.dlg.createResFeatureSelect.addItems([layer.name() for layer in self.layers])
+            
             if self.arches_graphs_list:
                 self.dlg.createResModelSelect.setEnabled(True)
                 self.dlg.createResModelSelect.addItems([graph["name"] for graph in self.arches_graphs_list])
+
+                self.dlg.addNewRes.setEnabled(True)
+                self.dlg.resetNewResSelection.setEnabled(True)
+
+
+
+    def create_resource(self):
+        selectedLayerIndex = self.dlg.createResFeatureSelect.currentIndex()
+        selectedLayer = self.layers[selectedLayerIndex]
+        selectedGraphIndex = self.dlg.createResModelSelect.currentIndex()
+        selectedGraph = self.arches_graphs_list[selectedGraphIndex]
+
+        # Would use shapely to create GEOMETRYCOLLECTION but that'd require users to install the dependency themselves
+        # this is the alternative        
+        all_features = [feature.geometry().asWkt() for feature in selectedLayer.getFeatures()]
+        geomcoll = "GEOMETRYCOLLECTION (%s)" % (','.join(all_features))
+
+        try:
+            results = self.save_to_arches(tileid=None,
+                                        nodeid = selectedGraph["node_id"],
+                                        geometry_collection=geomcoll,
+                                        geometry_format=None,
+                                        arches_operation="create")
+            self.dlg.createResOutputBox.setText("""Successfully created a new resource with the selected geometry.
+                                                \nTo continue the creation of your new resource, navigate to...\n%s/resource/%s""" % 
+                                              (self.arches_token["formatted_url"], results["resourceinstance_id"]))
+        except:
+            self.dlg.createResOutputBox.setText("Could not create resource")
+
+
+    def save_to_arches(self, tileid, nodeid, geometry_collection, geometry_format, arches_operation):
+        """Save data to arches resource"""
+        if self.arches_token:
+            try:
+                files = {
+                    'tileid': (None, tileid),
+                    'nodeid': (None, nodeid),
+                    'data': (None, geometry_collection),
+                    'format': (None, geometry_format),
+                    'operation': (None, arches_operation),
+                }
+                headers = {"Authorization": "Bearer %s" % (self.arches_token["access_token"])}
+                response = requests.post("%s/api/node_value/" % (self.arches_token["formatted_url"]), headers=headers, data=files)
+            
+                if response.ok == True:
+                    arches_created_resource = {"nodegroup_id": response.json()["nodegroup_id"],
+                                               "resourceinstance_id": response.json()["resourceinstance_id"],
+                                               "tile_id": response.json()["tileid"]}
+                    return arches_created_resource
+                else:
+                    print("Resource creation faiiled with response code:%s" % (response.status_code))
+
+            except:
+                print("Cannot create new resource")
+
+
 
 
     def arches_connection_reset(self):
@@ -284,6 +356,7 @@ class ArchesProject:
                 }
                 response = requests.post(url+"/o/token/", data=files)
                 self.arches_token = response.json()
+                self.arches_token["formatted_url"] = url
                 self.arches_token["time"] = str(datetime.now())
             except:
                 self.dlg.connection_status.append("Can't get token.")
@@ -296,15 +369,19 @@ class ArchesProject:
                 for graph in graphids:
                     contains_geom = False
                     req = requests.get("%s/graphs/%s" % (url, graph))
-                    for nodes in req.json()["graph"]["nodes"]:
-                        if nodes["datatype"] == "geojson-feature-collection":
-                            contains_geom=True
-
-                    if contains_geom == True:
-                        self.arches_graphs_list.append({
-                            "graphid":graph,
-                            "name":req.json()["graph"]["name"]
-                        })
+                    if req.json()["graph"]["publication_id"]:   # if graph is published
+                        for nodes in req.json()["graph"]["nodes"]:
+                            if nodes["datatype"] == "geojson-feature-collection":
+                                contains_geom=True
+                                nodegroupid = nodes["nodegroup_id"]
+                                nodeid = nodes["nodeid"]
+                        if contains_geom == True:
+                            self.arches_graphs_list.append({
+                                "graph_id":graph,
+                                "name":req.json()["graph"]["name"],
+                                "nodegroup_id": nodegroupid,
+                                "node_id": nodeid
+                            })
             except:
                 pass
 
@@ -327,6 +404,11 @@ class ArchesProject:
                 if clientid:
                     # If client id NOT None then connection has been made
                     # check cache first before firing connection again
+
+                    # re-fetch graphs before checking cache as updates may have occurred
+                    self.arches_graphs_list = []
+                    get_graphs(formatted_url) 
+
                     if self.arches_connection_cache:
                         if (self.dlg.arches_server_input.text() == self.arches_connection_cache["url"] and
                             self.dlg.username_input.text() == self.arches_connection_cache["username"]):
@@ -334,7 +416,6 @@ class ArchesProject:
                             return            
 
                     get_token(formatted_url, clientid)
-                    get_graphs(formatted_url)
 
                     self.dlg.connection_status.append("Connected to Arches instance.")                    
                     # Store for preventing duplicate connection requests

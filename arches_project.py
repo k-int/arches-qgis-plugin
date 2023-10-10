@@ -205,6 +205,10 @@ class ArchesProject:
         self.dlg.btnSave.clicked.connect(self.arches_connection_save)
         self.dlg.btnReset.clicked.connect(self.arches_connection_reset)
 
+        # Get the map selection and update when changed
+        self.map_selection()
+        self.iface.mapCanvas().selectionChanged.connect(self.map_selection)
+
         ## Create resource
         self.dlg.createResModelSelect.setEnabled(False)
         self.dlg.createResFeatureSelect.setEnabled(False)
@@ -221,7 +225,7 @@ class ArchesProject:
         self.dlg.createResModelSelect.currentIndexChanged.connect(self.update_graph_options)
 
         self.dlg.addNewRes.clicked.connect(self.create_resource)
-
+        
 
         # show the dialog
         self.dlg.show()
@@ -232,6 +236,21 @@ class ArchesProject:
             # Do something useful here - delete the line containing pass and
             # substitute with your code.
             pass
+
+    
+    def map_selection(self):
+        """Get the Arches Resource from the map"""
+        active_layer = self.iface.activeLayer()
+        features = active_layer.selectedFeatures()
+        if len(features) > 1:
+            print("Select one feature")
+        elif len(features) == 0:
+            print("No feature selected")
+        else:
+            for f in features:
+                if "resourceinstanceid" in f:
+                    print(f.attributes())
+                    print(f['resourceinstanceid'])
 
 
     def update_map_layers(self):
@@ -371,7 +390,7 @@ class ArchesProject:
         def get_graphs(url):
             try:
                 response = requests.get("%s/graphs/" % (url))
-                graphids = [x["graphid"] for x in response.json() if x["graphid"] != "ff623370-fa12-11e6-b98b-6c4008b05c4c"]
+                graphids = [x["graphid"] for x in response.json() if x["graphid"] != "ff623370-fa12-11e6-b98b-6c4008b05c4c"] # sys settings
 
                 for graph in graphids:
                     contains_geom = False

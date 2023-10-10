@@ -205,18 +205,19 @@ class ArchesProject:
         self.dlg.btnSave.clicked.connect(self.arches_connection_save)
         self.dlg.btnReset.clicked.connect(self.arches_connection_reset)
 
-        # Create resource
+        ## Create resource
         self.dlg.createResModelSelect.setEnabled(False)
         self.dlg.createResFeatureSelect.setEnabled(False)
         self.dlg.addNewRes.setEnabled(False)
         self.dlg.resetNewResSelection.setEnabled(False)
         self.dlg.createResConnectionStatus.setText("Not connected to Arches instance.")
             
+        # refresh initiates all lists of geometries and models
         self.dlg.createReloadConnection.clicked.connect(self.refresh_selection)
 
-        # to run when layer is changed
+        # to run when layer is changed in create resource
         self.dlg.createResFeatureSelect.currentIndexChanged.connect(self.update_map_layers)
-        # to run when graph is changed
+        # to run when graph is changed in create resource
         self.dlg.createResModelSelect.currentIndexChanged.connect(self.update_graph_options)
 
         self.dlg.addNewRes.clicked.connect(self.create_resource)
@@ -231,6 +232,7 @@ class ArchesProject:
             # Do something useful here - delete the line containing pass and
             # substitute with your code.
             pass
+
 
     def update_map_layers(self):
         selectedLayerIndex = self.dlg.createResFeatureSelect.currentIndex()
@@ -247,6 +249,8 @@ class ArchesProject:
             self.dlg.createResConnectionStatus.setText("Connected to Arches instance.")
 
             all_layers = list(QgsProject.instance().mapLayers().values())
+
+            # only get vector layers
             self.layers = [layer for layer in all_layers if isinstance(layer,QgsVectorLayer)]
 
             self.dlg.createResFeatureSelect.setEnabled(True)
@@ -259,6 +263,8 @@ class ArchesProject:
 
                 self.dlg.addNewRes.setEnabled(True)
                 self.dlg.resetNewResSelection.setEnabled(True)
+        else:
+            self.dlg.createResConnectionStatus.setText("Connect to Arches instance from the previous tab.")
 
 
 
@@ -271,6 +277,7 @@ class ArchesProject:
         # Would use shapely to create GEOMETRYCOLLECTION but that'd require users to install the dependency themselves
         # this is the alternative        
         all_features = [feature.geometry().asWkt() for feature in selectedLayer.getFeatures()]
+        print(len(all_features))
         geomcoll = "GEOMETRYCOLLECTION (%s)" % (','.join(all_features))
 
         try:
@@ -412,6 +419,7 @@ class ArchesProject:
                     if self.arches_connection_cache:
                         if (self.dlg.arches_server_input.text() == self.arches_connection_cache["url"] and
                             self.dlg.username_input.text() == self.arches_connection_cache["username"]):
+                            self.dlg.connection_status.append("Connected to Arches instance.")   
                             print("Unchanged inputs")
                             return            
 

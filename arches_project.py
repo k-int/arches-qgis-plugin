@@ -204,31 +204,33 @@ class ArchesProject:
         if self.first_start == True:
             self.first_start = False
             self.dlg = ArchesProjectDialog()
+
+            ## Have everything called in here so multiple connections aren't made when plugin button pressed
+            # This way only one connection is made at a time
+            self.dlg.tabWidget.setCurrentIndex(0)
+
             # initiate the current selected layer
             self.map_selection()
 
+            # Connection to Arches instance
+            self.dlg.btnSave.clicked.connect(self.arches_connection_save)
+            self.dlg.btnReset.clicked.connect(lambda: self.arches_connection_reset(hard_reset=True))
 
-        self.dlg.tabWidget.setCurrentIndex(0)
+            # Get the map selection and update when changed
+            self.iface.mapCanvas().selectionChanged.connect(self.map_selection)
 
-        self.dlg.btnSave.clicked.connect(self.arches_connection_save)
-        self.dlg.btnReset.clicked.connect(lambda: self.arches_connection_reset(hard_reset=True))
+            ## Set "Create resource" to false to begin with and only update once Arches connection made
+            self.dlg.createResModelSelect.setEnabled(False)
+            self.dlg.createResFeatureSelect.setEnabled(False)
+            self.dlg.addNewRes.setEnabled(False)
+            self.dlg.resetNewResSelection.setEnabled(False)
+                
+            # to run when layer is changed in create resource
+            self.dlg.createResFeatureSelect.currentIndexChanged.connect(self.update_map_layers)
+            # to run when graph is changed in create resource
+            self.dlg.createResModelSelect.currentIndexChanged.connect(self.update_graph_options)
 
-        # Get the map selection and update when changed
-        self.iface.mapCanvas().selectionChanged.connect(self.map_selection)
-
-        ## Set "Create resource" to false to begin with and only update once Arches connection made
-        self.dlg.createResModelSelect.setEnabled(False)
-        self.dlg.createResFeatureSelect.setEnabled(False)
-        self.dlg.addNewRes.setEnabled(False)
-        self.dlg.resetNewResSelection.setEnabled(False)
-
-            
-        # to run when layer is changed in create resource
-        self.dlg.createResFeatureSelect.currentIndexChanged.connect(self.update_map_layers)
-        # to run when graph is changed in create resource
-        self.dlg.createResModelSelect.currentIndexChanged.connect(self.update_graph_options)
-
-        self.dlg.addNewRes.clicked.connect(self.create_resource)
+            self.dlg.addNewRes.clicked.connect(self.create_resource)
         
 
         # show the dialog

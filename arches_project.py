@@ -23,8 +23,12 @@
 """
 from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication
 from qgis.PyQt.QtGui import QIcon
-from qgis.PyQt.QtWidgets import QAction
-from qgis.core import QgsProject, QgsVectorLayer
+from qgis.PyQt.QtWidgets import QAction, QTableView
+from qgis.core import QgsProject, QgsVectorLayer, QgsVectorLayerCache
+from qgis.gui import (QgsAttributeTableView, 
+                      QgsAttributeTableModel, 
+                      QgsAttributeTableFilterModel,
+                      )
 
 # Initialize Qt resources from file resources.py
 from .resources import *
@@ -77,6 +81,7 @@ class ArchesProject:
         # Store token data to avoid regenerating every connection
         self.arches_token = {}
         self.arches_graphs_list = []
+        
 
     # noinspection PyMethodMayBeStatic
     def tr(self, message):
@@ -199,26 +204,25 @@ class ArchesProject:
         if self.first_start == True:
             self.first_start = False
             self.dlg = ArchesProjectDialog()
+            # initiate the current selected layer
+            self.map_selection()
+
 
         self.dlg.tabWidget.setCurrentIndex(0)
 
         self.dlg.btnSave.clicked.connect(self.arches_connection_save)
-        self.dlg.btnReset.clicked.connect(self.arches_connection_reset)
+        self.dlg.btnReset.clicked.connect(lambda: self.arches_connection_reset(hard_reset=True))
 
         # Get the map selection and update when changed
-        self.map_selection()
         self.iface.mapCanvas().selectionChanged.connect(self.map_selection)
 
-        ## Create resource
+        ## Set "Create resource" to false to begin with and only update once Arches connection made
         self.dlg.createResModelSelect.setEnabled(False)
         self.dlg.createResFeatureSelect.setEnabled(False)
         self.dlg.addNewRes.setEnabled(False)
         self.dlg.resetNewResSelection.setEnabled(False)
-        self.dlg.createResConnectionStatus.setText("Not connected to Arches instance.")
-            
-        # refresh initiates all lists of geometries and models
-        self.dlg.createReloadConnection.clicked.connect(self.refresh_selection)
 
+            
         # to run when layer is changed in create resource
         self.dlg.createResFeatureSelect.currentIndexChanged.connect(self.update_map_layers)
         # to run when graph is changed in create resource
@@ -237,20 +241,32 @@ class ArchesProject:
             # substitute with your code.
             pass
 
-    
+
     def map_selection(self):
         """Get the Arches Resource from the map"""
         active_layer = self.iface.activeLayer()
+        canvas = self.iface.mapCanvas()
         features = active_layer.selectedFeatures()
+        print("\nmap selection has been fired because selection changed")
+        print("layer:",active_layer, "features:",features)
+
         if len(features) > 1:
             print("Select one feature")
+            return
         elif len(features) == 0:
             print("No feature selected")
+            return
         else:
+            print("FEATURE SELECTED")
             for f in features:
-                if "resourceinstanceid" in f:
-                    print(f.attributes())
-                    print(f['resourceinstanceid'])
+                if "resourceinstanceid" in f.attributeMap():
+                    self.dlg.selectedResUUID.setText(f['resourceinstanceid'])
+                    no_rows = len(f.attributes())
+                    print(no_rows)
+                    no_cols = 2
+
+                    self.dlg.selectedResAttributeTable.setRowCount(no_rows)
+                    self.dlg.selectedResAttributeTable.setColumnCount(no_cols)
 
 
     def update_map_layers(self):
@@ -262,28 +278,28 @@ class ArchesProject:
         selectedGraph = self.arches_graphs_list[selectedGraphIndex]    
 
 
-    def refresh_selection(self):
-        self.dlg.createResModelSelect.clear()
-        if self.arches_token:
-            self.dlg.createResConnectionStatus.setText("Connected to Arches instance.")
+    # def refresh_selection(self):
+    #     self.dlg.createResModelSelect.clear()
+    #     if self.arches_token:
+    #         self.dlg.createResConnectionStatus.setText("Connected to Arches instance.")
 
-            all_layers = list(QgsProject.instance().mapLayers().values())
+    #         all_layers = list(QgsProject.instance().mapLayers().values())
 
-            # only get vector layers
-            self.layers = [layer for layer in all_layers if isinstance(layer,QgsVectorLayer)]
+    #         # only get vector layers
+    #         self.layers = [layer for layer in all_layers if isinstance(layer,QgsVectorLayer)]
 
-            self.dlg.createResFeatureSelect.setEnabled(True)
-            self.dlg.createResFeatureSelect.clear()
-            self.dlg.createResFeatureSelect.addItems([layer.name() for layer in self.layers])
+    #         self.dlg.createResFeatureSelect.setEnabled(True)
+    #         self.dlg.createResFeatureSelect.clear()
+    #         self.dlg.createResFeatureSelect.addItems([layer.name() for layer in self.layers])
             
-            if self.arches_graphs_list:
-                self.dlg.createResModelSelect.setEnabled(True)
-                self.dlg.createResModelSelect.addItems([graph["name"] for graph in self.arches_graphs_list])
+    #         if self.arches_graphs_list:
+    #             self.dlg.createResModelSelect.setEnabled(True)
+    #             self.dlg.createResModelSelect.addItems([graph["name"] for graph in self.arches_graphs_list])
 
-                self.dlg.addNewRes.setEnabled(True)
-                self.dlg.resetNewResSelection.setEnabled(True)
-        else:
-            self.dlg.createResConnectionStatus.setText("Connect to Arches instance from the previous tab.")
+    #             self.dlg.addNewRes.setEnabled(True)
+    #             self.dlg.resetNewResSelection.setEnabled(True)
+    #     else:
+    #         self.dlg.createResConnectionStatus.setText("Connect to Arches instance from the previous tab.")
 
 
 
@@ -296,7 +312,7 @@ class ArchesProject:
         # Would use shapely to create GEOMETRYCOLLECTION but that'd require users to install the dependency themselves
         # this is the alternative        
         all_features = [feature.geometry().asWkt() for feature in selectedLayer.getFeatures()]
-        print(len(all_features))
+
         geomcoll = "GEOMETRYCOLLECTION (%s)" % (','.join(all_features))
 
         try:
@@ -340,12 +356,26 @@ class ArchesProject:
 
 
 
-    def arches_connection_reset(self):
-        """Reset Arches connection inputs"""
-        self.dlg.connection_status.setText("")
-        self.dlg.arches_server_input.setText("")
-        self.dlg.username_input.setText("")
-        self.dlg.password_input.setText("")
+    def arches_connection_reset(self, hard_reset):
+        """Reset Arches connection"""
+        if hard_reset == True:
+            # Reset connection inputs
+            self.dlg.connection_status.setText("")
+            self.dlg.arches_server_input.setText("")
+            self.dlg.username_input.setText("")
+            self.dlg.password_input.setText("")
+        # Reset stored data
+        self.arches_connection_cache = {}
+        self.arches_token = {}
+        self.arches_graphs_list = []
+        # Reset Create Resource tab as no longer useable
+        self.dlg.createResModelSelect.setEnabled(False)
+        self.dlg.createResFeatureSelect.setEnabled(False)
+        self.dlg.addNewRes.setEnabled(False)
+        self.dlg.resetNewResSelection.setEnabled(False)
+
+
+
 
 
     def arches_connection_save(self):
@@ -369,7 +399,7 @@ class ArchesProject:
                 clientid = response.json()["clientid"]
                 return clientid
             except:
-                self.dlg.connection_status.append("Can't get client ID. Is the Arches instance running? If so, check the instance has a registered Oauth application.")
+                self.dlg.connection_status.append("Can't get client ID.\n- Check username and password are correct.\n- Check the Arches instance is running.\n- Check the instance has a registered Oauth application.")
                 return None
             
         def get_token(url, clientid):
@@ -421,45 +451,65 @@ class ArchesProject:
         if self.dlg.password_input.text() == "":
             self.dlg.connection_status.append("Please enter your password.")
 
+
         # URL field has data in
         if self.dlg.arches_server_input.text() != "":
             formatted_url = format_url()
 
-            try:
-                clientid = get_clientid(formatted_url)
-                if clientid:
-                    # If client id NOT None then connection has been made
-                    # check cache first before firing connection again
+            clientid = get_clientid(formatted_url)
+            if clientid:
+                # If client id NOT None then connection has been made
+                # check cache first before firing connection again
 
-                    # re-fetch graphs before checking cache as updates may have occurred
-                    self.arches_graphs_list = []
-                    get_graphs(formatted_url) 
-
-                    if self.arches_connection_cache:
-                        if (self.dlg.arches_server_input.text() == self.arches_connection_cache["url"] and
-                            self.dlg.username_input.text() == self.arches_connection_cache["username"]):
-                            self.dlg.connection_status.append("Connected to Arches instance.")   
-                            print("Unchanged inputs")
-                            return            
-
-                    get_token(formatted_url, clientid)
-
-                    self.dlg.connection_status.append("Connected to Arches instance.")                    
-                    # Store for preventing duplicate connection requests
-                    self.arches_connection_cache = {"url": self.dlg.arches_server_input.text(),
-                                                    "username": self.dlg.username_input.text()}
-                
-                else:
-                    # If clientid is None i.e no connection, reset cache and token to {}
-                    self.arches_connection_cache = {}
-                    self.arches_token = {}
-                    self.arches_graphs_list = []
-
-            except:
-                # Connection couldn't be made so reset everything 
-                self.dlg.connection_status.append("Could not connect to Arches instance.")
-                self.arches_token = {}
+                # re-fetch graphs before checking cache as updates may have occurred
                 self.arches_graphs_list = []
-                return False
+                get_graphs(formatted_url) 
+
+                if self.arches_connection_cache:
+                    if (self.dlg.arches_server_input.text() == self.arches_connection_cache["url"] and
+                        self.dlg.username_input.text() == self.arches_connection_cache["username"]):
+                        self.dlg.connection_status.append("Connected to Arches instance.")   
+                        print("Unchanged inputs")
+                        return            
+
+                get_token(formatted_url, clientid)
+
+                self.dlg.connection_status.append("Connected to Arches instance.")                    
+                # Store for preventing duplicate connection requests
+                self.arches_connection_cache = {"url": self.dlg.arches_server_input.text(),
+                                                "username": self.dlg.username_input.text()}
+                
+
+                # Create resource tab
+                self.dlg.createResModelSelect.clear()
+                if self.arches_token:
+                    all_layers = list(QgsProject.instance().mapLayers().values())
+                    # only get vector layers
+                    self.layers = [layer for layer in all_layers if isinstance(layer,QgsVectorLayer)]
+
+                    self.dlg.createResFeatureSelect.setEnabled(True)
+                    self.dlg.createResFeatureSelect.clear()
+                    self.dlg.createResFeatureSelect.addItems([layer.name() for layer in self.layers])
+                    
+                    if self.arches_graphs_list:
+                        self.dlg.createResModelSelect.setEnabled(True)
+                        self.dlg.createResModelSelect.addItems([graph["name"] for graph in self.arches_graphs_list])
+
+                        self.dlg.addNewRes.setEnabled(True)
+                        self.dlg.resetNewResSelection.setEnabled(True)
+
+            else:
+                # If clientid is None i.e no connection, reset cache and token to {}
+                self.arches_connection_reset(hard_reset=False)
+
+
+
+            # except:
+            #     # Connection couldn't be made so reset everything 
+            #     print("in except")
+            #     self.dlg.connection_status.append("Could not connect to Arches instance.")
+            #     self.arches_token = {}
+            #     self.arches_graphs_list = []
+            #     return False
 
 

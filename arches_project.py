@@ -23,7 +23,7 @@
 """
 from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication
 from qgis.PyQt.QtGui import QIcon
-from qgis.PyQt.QtWidgets import QAction, QTableView
+from qgis.PyQt.QtWidgets import QAction, QTableView, QTableWidgetItem
 from qgis.core import QgsProject, QgsVectorLayer, QgsVectorLayerCache
 from qgis.gui import (QgsAttributeTableView, 
                       QgsAttributeTableModel, 
@@ -231,7 +231,15 @@ class ArchesProject:
             self.dlg.createResModelSelect.currentIndexChanged.connect(self.update_graph_options)
 
             self.dlg.addNewRes.clicked.connect(self.create_resource)
-        
+
+            ## Set "Edit Resource" to false to begin with
+            self.dlg.selectedResUUID.setText("Connect to your Arches instance to edit resources.")
+            self.dlg.addEditRes.setEnabled(False)
+            self.dlg.resetEditRes.setEnabled(False)
+            self.dlg.editResSelectFeatures.setEnabled(False)
+            #self.dlg.selectedResAttributeTable.setRowCount(0)
+            self.dlg.selectedResAttributeTable.setEnabled(False)
+
 
         # show the dialog
         self.dlg.show()
@@ -246,6 +254,7 @@ class ArchesProject:
 
     def map_selection(self):
         """Get the Arches Resource from the map"""
+
         active_layer = self.iface.activeLayer()
         canvas = self.iface.mapCanvas()
         features = active_layer.selectedFeatures()
@@ -254,55 +263,65 @@ class ArchesProject:
 
         if len(features) > 1:
             print("Select one feature")
+            self.dlg.selectedResAttributeTable.setRowCount(0)
+            if self.arches_token:
+                self.dlg.selectedResUUID.setText("Multiple features selected, select one feature to proceed.")
+            else:
+                self.dlg.selectedResUUID.setText("Connect to your Arches instance to edit resources.")
             return
+        
         elif len(features) == 0:
             print("No feature selected")
+            self.dlg.selectedResAttributeTable.setRowCount(0)
+            if self.arches_token:
+                self.dlg.selectedResUUID.setText("Select a feature to proceed.")
+            else:
+                self.dlg.selectedResUUID.setText("Connect to your Arches instance to edit resources.")
             return
+        
         else:
             print("FEATURE SELECTED")
             for f in features:
                 if "resourceinstanceid" in f.attributeMap():
-                    self.dlg.selectedResUUID.setText(f['resourceinstanceid'])
-                    no_rows = len(f.attributes())
-                    print(no_rows)
-                    no_cols = 2
 
+                    if self.arches_token:
+                        resource_string = "Resource: %s" % (f['resourceinstanceid'])
+                        self.dlg.selectedResUUID.setText(resource_string)
+                    else:
+                        self.dlg.selectedResUUID.setText("Connect to your Arches instance to edit resources.")
+
+                    no_rows = len(f.attributes())
+                    no_cols = 2
                     self.dlg.selectedResAttributeTable.setRowCount(no_rows)
                     self.dlg.selectedResAttributeTable.setColumnCount(no_cols)
+
+                    # Fill table with attributes
+                    for i, (k, v) in enumerate(f.attributeMap().items()):
+                        feat = QTableWidgetItem(str(k))
+                        val = QTableWidgetItem(str(v))
+                        self.dlg.selectedResAttributeTable.setItem(i, 0, feat)
+                        self.dlg.selectedResAttributeTable.setItem(i, 1, val)
+                        self.dlg.selectedResAttributeTable.setRowHeight(i, 5)
+
+                    self.dlg.selectedResAttributeTable.setHorizontalHeaderLabels([u'Feature',u'Values'])
+                    self.dlg.selectedResAttributeTable.resizeColumnsToContents()
+                
+                else: 
+                    if self.arches_token:
+                        self.dlg.selectedResUUID.setText("The feature selected is not an Arches resource.")
+                    else:
+                        self.dlg.selectedResUUID.setText("Connect to your Arches instance to edit resources.")
+
 
 
     def update_map_layers(self):
         selectedLayerIndex = self.dlg.createResFeatureSelect.currentIndex()
         selectedLayer = self.layers[selectedLayerIndex]
 
+
     def update_graph_options(self):
         selectedGraphIndex = self.dlg.createResModelSelect.currentIndex()
         selectedGraph = self.arches_graphs_list[selectedGraphIndex]    
-
-
-    # def refresh_selection(self):
-    #     self.dlg.createResModelSelect.clear()
-    #     if self.arches_token:
-    #         self.dlg.createResConnectionStatus.setText("Connected to Arches instance.")
-
-    #         all_layers = list(QgsProject.instance().mapLayers().values())
-
-    #         # only get vector layers
-    #         self.layers = [layer for layer in all_layers if isinstance(layer,QgsVectorLayer)]
-
-    #         self.dlg.createResFeatureSelect.setEnabled(True)
-    #         self.dlg.createResFeatureSelect.clear()
-    #         self.dlg.createResFeatureSelect.addItems([layer.name() for layer in self.layers])
-            
-    #         if self.arches_graphs_list:
-    #             self.dlg.createResModelSelect.setEnabled(True)
-    #             self.dlg.createResModelSelect.addItems([graph["name"] for graph in self.arches_graphs_list])
-
-    #             self.dlg.addNewRes.setEnabled(True)
-    #             self.dlg.resetNewResSelection.setEnabled(True)
-    #     else:
-    #         self.dlg.createResConnectionStatus.setText("Connect to Arches instance from the previous tab.")
-
 
 
     def create_resource(self):
@@ -351,7 +370,6 @@ class ArchesProject:
                     return arches_created_resource
                 else:
                     print("Resource creation faiiled with response code:%s" % (response.status_code))
-
             except:
                 print("Cannot create new resource")
 
@@ -366,6 +384,7 @@ class ArchesProject:
             self.dlg.arches_server_input.setText("")
             self.dlg.username_input.setText("")
             self.dlg.password_input.setText("")
+            self.dlg.selectedResUUID.setText("Connect to your Arches instance to edit resources.")
         # Reset stored data
         self.arches_connection_cache = {}
         self.arches_token = {}
@@ -375,6 +394,13 @@ class ArchesProject:
         self.dlg.createResFeatureSelect.setEnabled(False)
         self.dlg.addNewRes.setEnabled(False)
         self.dlg.resetNewResSelection.setEnabled(False)
+        ## Set "Edit Resource" to false to begin with
+        # self.dlg.selectedResUUID.setText("aaaaaaaaaaaaaaa.")
+        self.dlg.addEditRes.setEnabled(False)
+        self.dlg.resetEditRes.setEnabled(False)
+        self.dlg.editResSelectFeatures.setEnabled(False)
+        self.dlg.selectedResAttributeTable.setRowCount(0)
+        self.dlg.selectedResAttributeTable.setEnabled(False)
 
 
 
@@ -476,7 +502,9 @@ class ArchesProject:
 
                 get_token(formatted_url, clientid)
 
-                self.dlg.connection_status.append("Connected to Arches instance.")                    
+                self.dlg.connection_status.append("Connected to Arches instance.")  
+                self.dlg.selectedResUUID.setText("Connected to Arches. Select an Arches resource to proceed.")
+
                 # Store for preventing duplicate connection requests
                 self.arches_connection_cache = {"url": self.dlg.arches_server_input.text(),
                                                 "username": self.dlg.username_input.text()}
@@ -484,34 +512,31 @@ class ArchesProject:
 
                 # Create resource tab
                 self.dlg.createResModelSelect.clear()
-                if self.arches_token:
-                    all_layers = list(QgsProject.instance().mapLayers().values())
-                    # only get vector layers
-                    self.layers = [layer for layer in all_layers if isinstance(layer,QgsVectorLayer)]
+                # if self.arches_token:
+                all_layers = list(QgsProject.instance().mapLayers().values())
+                # only get vector layers
+                self.layers = [layer for layer in all_layers if isinstance(layer,QgsVectorLayer)]
 
-                    self.dlg.createResFeatureSelect.setEnabled(True)
-                    self.dlg.createResFeatureSelect.clear()
-                    self.dlg.createResFeatureSelect.addItems([layer.name() for layer in self.layers])
-                    
-                    if self.arches_graphs_list:
-                        self.dlg.createResModelSelect.setEnabled(True)
-                        self.dlg.createResModelSelect.addItems([graph["name"] for graph in self.arches_graphs_list])
+                self.dlg.createResFeatureSelect.setEnabled(True)
+                self.dlg.createResFeatureSelect.clear()
+                self.dlg.createResFeatureSelect.addItems([layer.name() for layer in self.layers])
+                
+                if self.arches_graphs_list:
+                    self.dlg.createResModelSelect.setEnabled(True)
+                    self.dlg.createResModelSelect.addItems([graph["name"] for graph in self.arches_graphs_list])
 
-                        self.dlg.addNewRes.setEnabled(True)
-                        self.dlg.resetNewResSelection.setEnabled(True)
+                    self.dlg.addNewRes.setEnabled(True)
+                    self.dlg.resetNewResSelection.setEnabled(True)
+
+                # Edit resources tab
+                self.dlg.addEditRes.setEnabled(True)
+                self.dlg.resetEditRes.setEnabled(True)
+                self.dlg.editResSelectFeatures.setEnabled(True)
+                self.dlg.editResSelectFeatures.addItems([layer.name() for layer in self.layers])
+                self.dlg.selectedResAttributeTable.setEnabled(True)
+
 
             else:
                 # If clientid is None i.e no connection, reset cache and token to {}
                 self.arches_connection_reset(hard_reset=False)
-
-
-
-            # except:
-            #     # Connection couldn't be made so reset everything 
-            #     print("in except")
-            #     self.dlg.connection_status.append("Could not connect to Arches instance.")
-            #     self.arches_token = {}
-            #     self.arches_graphs_list = []
-            #     return False
-
 

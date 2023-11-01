@@ -570,9 +570,9 @@
                      </widget>
                     </item>
                     <item>
-                     <widget class="QPushButton" name="resetEditRes">
+                     <widget class="QPushButton" name="replaceEditRes">
                       <property name="text">
-                       <string>Reset</string>
+                       <string>Replace</string>
                       </property>
                      </widget>
                     </item>

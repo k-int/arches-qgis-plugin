@@ -81,6 +81,11 @@ class ArchesProject:
         # Store token data to avoid regenerating every connection
         self.arches_token = {}
         self.arches_graphs_list = []
+        # Store selected arches resource
+        self.arches_selected_resource = {"resourceinstanceid": "",
+                                         "nodeid": "",
+                                         "tileid": ""
+                                        }
         
 
     # noinspection PyMethodMayBeStatic
@@ -235,10 +240,13 @@ class ArchesProject:
             ## Set "Edit Resource" to false to begin with
             self.dlg.selectedResUUID.setText("Connect to your Arches instance to edit resources.")
             self.dlg.addEditRes.setEnabled(False)
-            self.dlg.resetEditRes.setEnabled(False)
+            self.dlg.replaceEditRes.setEnabled(False)
             self.dlg.editResSelectFeatures.setEnabled(False)
             #self.dlg.selectedResAttributeTable.setRowCount(0)
             self.dlg.selectedResAttributeTable.setEnabled(False)
+
+            self.dlg.addEditRes.clicked.connect(lambda: self.edit_resource(replace=False))
+            self.dlg.replaceEditRes.clicked.connect(lambda: self.edit_resource(replace=True))
 
 
         # show the dialog
@@ -250,6 +258,7 @@ class ArchesProject:
             # Do something useful here - delete the line containing pass and
             # substitute with your code.
             pass
+
 
 
     def map_selection(self):
@@ -275,6 +284,8 @@ class ArchesProject:
             self.dlg.selectedResAttributeTable.setRowCount(0)
             if self.arches_token:
                 self.dlg.selectedResUUID.setText("Select a feature to proceed.")
+                self.dlg.addEditRes.setEnabled(False)
+                self.dlg.replaceEditRes.setEnabled(False)
             else:
                 self.dlg.selectedResUUID.setText("Connect to your Arches instance to edit resources.")
             return
@@ -283,13 +294,9 @@ class ArchesProject:
             print("FEATURE SELECTED")
             for f in features:
                 if "resourceinstanceid" in f.attributeMap():
-
-                    if self.arches_token:
-                        resource_string = "Resource: %s" % (f['resourceinstanceid'])
-                        self.dlg.selectedResUUID.setText(resource_string)
-                    else:
-                        self.dlg.selectedResUUID.setText("Connect to your Arches instance to edit resources.")
-
+                    
+                    # Initialise attribute table in the plugin window if the geom is recognised as an Arches res
+                    # if initialised when arches_token exists then would have to click off and back on to recognise
                     no_rows = len(f.attributes())
                     no_cols = 2
                     self.dlg.selectedResAttributeTable.setRowCount(no_rows)
@@ -302,9 +309,31 @@ class ArchesProject:
                         self.dlg.selectedResAttributeTable.setItem(i, 0, feat)
                         self.dlg.selectedResAttributeTable.setItem(i, 1, val)
                         self.dlg.selectedResAttributeTable.setRowHeight(i, 5)
+                        # Store current resource info
+                        if k == "resourceinstanceid":
+                            self.arches_selected_resource["resourceinstanceid"] = v
+                        elif k == "nodeid":
+                            self.arches_selected_resource["nodeid"] = v
+                        elif k == "tileid":
+                            self.arches_selected_resource["tileid"] = v
 
                     self.dlg.selectedResAttributeTable.setHorizontalHeaderLabels([u'Feature',u'Values'])
                     self.dlg.selectedResAttributeTable.resizeColumnsToContents()
+
+                    # if the token exists then enable the UI elements
+                    if self.arches_token:
+                        resource_string = "Resource: %s" % (f['resourceinstanceid'])
+                        self.dlg.selectedResUUID.setText(resource_string)
+                        self.dlg.addEditRes.setEnabled(True)
+                        self.dlg.replaceEditRes.setEnabled(True)
+
+                        # Save resource instance details once selected
+                        print(self.arches_selected_resource)
+                    else:
+                        self.dlg.selectedResUUID.setText("Connect to your Arches instance to edit resources.")
+                        self.dlg.addEditRes.setEnabled(False)
+                        self.dlg.replaceEditRes.setEnabled(False)
+
                 
                 else: 
                     if self.arches_token:
@@ -319,9 +348,11 @@ class ArchesProject:
         selectedLayer = self.layers[selectedLayerIndex]
 
 
+
     def update_graph_options(self):
         selectedGraphIndex = self.dlg.createResModelSelect.currentIndex()
         selectedGraph = self.arches_graphs_list[selectedGraphIndex]    
+
 
 
     def create_resource(self):
@@ -347,6 +378,43 @@ class ArchesProject:
                                               (self.arches_token["formatted_url"], results["resourceinstance_id"]))
         except:
             self.dlg.createResOutputBox.setText("Could not create resource")
+
+
+
+    def edit_resource(self, replace):
+        """Save geometries to existing resource - either replace or add"""
+        if self.arches_selected_resource:
+            selectedLayerIndex = self.dlg.editResSelectFeatures.currentIndex()
+            selectedLayer = self.layers[selectedLayerIndex]
+
+            # Would use shapely to create GEOMETRYCOLLECTION but that'd require users to install the dependency themselves
+            # this is the alternative        
+            all_features = [feature.geometry().asWkt() for feature in selectedLayer.getFeatures()]
+
+            geomcoll = "GEOMETRYCOLLECTION (%s)" % (','.join(all_features))
+
+            # Replace geometry
+            if replace == True:
+                try:
+                    results = self.save_to_arches(tileid=self.arches_selected_resource["tileid"],
+                                                nodeid = self.arches_selected_resource["nodeid"],
+                                                geometry_collection=geomcoll,
+                                                geometry_format=None,
+                                                arches_operation="create")
+                except:
+                    print("Couldn't replace geometry in resource")
+
+            # Add geometry to the resource
+            else:
+                try:
+                    results = self.save_to_arches(tileid=self.arches_selected_resource["tileid"],
+                                                nodeid = self.arches_selected_resource["nodeid"],
+                                                geometry_collection=geomcoll,
+                                                geometry_format=None,
+                                                arches_operation="append")
+                except:
+                    print("Couldn't add geometry to resource")
+
 
 
     def save_to_arches(self, tileid, nodeid, geometry_collection, geometry_format, arches_operation):
@@ -395,9 +463,8 @@ class ArchesProject:
         self.dlg.addNewRes.setEnabled(False)
         self.dlg.resetNewResSelection.setEnabled(False)
         ## Set "Edit Resource" to false to begin with
-        # self.dlg.selectedResUUID.setText("aaaaaaaaaaaaaaa.")
         self.dlg.addEditRes.setEnabled(False)
-        self.dlg.resetEditRes.setEnabled(False)
+        self.dlg.replaceEditRes.setEnabled(False)
         self.dlg.editResSelectFeatures.setEnabled(False)
         self.dlg.selectedResAttributeTable.setRowCount(0)
         self.dlg.selectedResAttributeTable.setEnabled(False)
@@ -492,6 +559,7 @@ class ArchesProject:
                 # re-fetch graphs before checking cache as updates may have occurred
                 self.arches_graphs_list = []
                 get_graphs(formatted_url) 
+                print(self.arches_graphs_list)
 
                 if self.arches_connection_cache:
                     if (self.dlg.arches_server_input.text() == self.arches_connection_cache["url"] and
@@ -529,8 +597,11 @@ class ArchesProject:
                     self.dlg.resetNewResSelection.setEnabled(True)
 
                 # Edit resources tab
-                self.dlg.addEditRes.setEnabled(True)
-                self.dlg.resetEditRes.setEnabled(True)
+                self.dlg.addEditRes.setEnabled(False)
+                self.dlg.replaceEditRes.setEnabled(False)
+                if self.arches_selected_resource:
+                    self.dlg.addEditRes.setEnabled(True)
+                    self.dlg.replaceEditRes.setEnabled(True)
                 self.dlg.editResSelectFeatures.setEnabled(True)
                 self.dlg.editResSelectFeatures.addItems([layer.name() for layer in self.layers])
                 self.dlg.selectedResAttributeTable.setEnabled(True)

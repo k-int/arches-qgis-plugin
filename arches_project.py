@@ -21,10 +21,11 @@
  *                                                                         *
  ***************************************************************************/
 """
+from PyQt5.QtCore import Qt
 from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction, QTableView, QTableWidgetItem
-from qgis.core import QgsProject, QgsVectorLayer, QgsVectorLayerCache
+from qgis.core import QgsProject, QgsVectorLayer, QgsVectorLayerCache, QgsWkbTypes
 from qgis.gui import (QgsAttributeTableView, 
                       QgsAttributeTableModel, 
                       QgsAttributeTableFilterModel,
@@ -36,6 +37,8 @@ from .resources import *
 from .arches_project_dialog import ArchesProjectDialog
 import os.path
 
+# Import the confirmation dialogs
+from .dialog.create_resource_confirmation_dialog import CreateResourceConfirmation
 #from shapely import GeometryCollection
 import requests
 from datetime import datetime
@@ -75,7 +78,11 @@ class ArchesProject:
         # Check if plugin was started the first time in current QGIS session
         # Must be set in initGui() to survive plugin reloads
         self.first_start = None
+        
+        # Comfirmation additional dialogs 
 
+
+        ## ARCHES PLUGIN SPECIFIC VARIABLES
         # Cache connection details to prevent firing duplicate connections
         self.arches_connection_cache = {}
         # Store token data to avoid regenerating every connection
@@ -209,6 +216,7 @@ class ArchesProject:
         if self.first_start == True:
             self.first_start = False
             self.dlg = ArchesProjectDialog()
+            self.dlg_resource_creation = CreateResourceConfirmation()
 
             ## Have everything called in here so multiple connections aren't made when plugin button pressed
             # This way only one connection is made at a time
@@ -235,6 +243,7 @@ class ArchesProject:
             # to run when graph is changed in create resource
             self.dlg.createResModelSelect.currentIndexChanged.connect(self.update_graph_options)
 
+            # click add button - should bring up new dialog for confirmation
             self.dlg.addNewRes.clicked.connect(self.create_resource)
 
             ## Set "Edit Resource" to false to begin with
@@ -253,6 +262,7 @@ class ArchesProject:
         self.dlg.show()
         # Run the dialog event loop
         result = self.dlg.exec_()
+        print(result)
         # See if OK was pressed
         if result:
             # Do something useful here - delete the line containing pass and
@@ -356,6 +366,27 @@ class ArchesProject:
 
 
     def create_resource(self):
+        """Create Resource dialog and functionality"""
+
+        def send_new_resource_to_arches():
+            geomcoll = "GEOMETRYCOLLECTION (%s)" % (','.join(all_features))
+
+            try:
+                results = self.save_to_arches(tileid=None,
+                                            nodeid = selectedGraph["node_id"],
+                                            geometry_collection=geomcoll,
+                                            geometry_format=None,
+                                            arches_operation="create")
+                self.dlg.createResOutputBox.setText("""Successfully created a new resource with the selected geometry.
+                                                    \nTo continue the creation of your new resource, navigate to...\n%s/resource/%s""" % 
+                                                  (self.arches_token["formatted_url"], results["resourceinstance_id"]))
+            except:
+                self.dlg.createResOutputBox.setText("Could not create resource")
+
+        def close_dialog():
+            self.dlg_resource_creation.close()
+
+        # Get info on current layer and selected graph
         selectedLayerIndex = self.dlg.createResFeatureSelect.currentIndex()
         selectedLayer = self.layers[selectedLayerIndex]
         selectedGraphIndex = self.dlg.createResModelSelect.currentIndex()
@@ -365,19 +396,32 @@ class ArchesProject:
         # this is the alternative        
         all_features = [feature.geometry().asWkt() for feature in selectedLayer.getFeatures()]
 
-        geomcoll = "GEOMETRYCOLLECTION (%s)" % (','.join(all_features))
+        # Dynamic dict to show the number of each type of geom on the dialog
+        geometry_type_dict = {}
+        
+        for feature in selectedLayer.getFeatures():
+            geom = feature.geometry()
+            geomtype = str(geom.type()).split(".")
+            if geomtype[-1] not in geometry_type_dict:
+                geometry_type_dict[geomtype[-1]] = 1
+            else:
+                geometry_type_dict[geomtype[-1]] += 1
 
-        try:
-            results = self.save_to_arches(tileid=None,
-                                        nodeid = selectedGraph["node_id"],
-                                        geometry_collection=geomcoll,
-                                        geometry_format=None,
-                                        arches_operation="create")
-            self.dlg.createResOutputBox.setText("""Successfully created a new resource with the selected geometry.
-                                                \nTo continue the creation of your new resource, navigate to...\n%s/resource/%s""" % 
-                                              (self.arches_token["formatted_url"], results["resourceinstance_id"]))
-        except:
-            self.dlg.createResOutputBox.setText("Could not create resource")
+
+        # open dialog
+        self.dlg_resource_creation.show()
+
+        # Format text box
+        self.dlg_resource_creation.infoText.viewport().setAutoFillBackground(False) # Sets the text box to be invisible
+        self.dlg_resource_creation.infoText.setText("")
+        self.dlg_resource_creation.infoText.append("Resource will be created with the following geometries:\n\n")
+        for k,v in geometry_type_dict.items():
+            self.dlg_resource_creation.infoText.append(f"{k}: {v}\n")
+
+        # Push button responses    
+        self.dlg_resource_creation.createDialogCreate.clicked.connect(send_new_resource_to_arches)
+        self.dlg_resource_creation.createDialogCancel.clicked.connect(close_dialog)
+
 
 
 

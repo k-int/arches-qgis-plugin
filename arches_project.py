@@ -29,6 +29,7 @@ from qgis.core import QgsProject, QgsVectorLayer, QgsVectorLayerCache, QgsWkbTyp
 from qgis.gui import (QgsAttributeTableView, 
                       QgsAttributeTableModel, 
                       QgsAttributeTableFilterModel,
+                      QgsMapLayerComboBox
                       )
 
 # Initialize Qt resources from file resources.py
@@ -89,6 +90,7 @@ class ArchesProject:
         self.arches_token = {}
         self.arches_graphs_list = []
         # Store selected arches resource
+        self.layers = []
         self.arches_selected_resource = {"resourceinstanceid": "",
                                          "nodeid": "",
                                          "tileid": ""
@@ -188,7 +190,7 @@ class ArchesProject:
     def initGui(self):
         """Create the menu entries and toolbar icons inside the QGIS GUI."""
 
-        icon_path = ':/plugins/arches_project/icon.png'
+        icon_path = ':/plugins/arches_project/icons/arches.png'
         self.add_action(
             icon_path,
             text=self.tr(u'Arches Project'),
@@ -236,12 +238,28 @@ class ArchesProject:
             self.dlg.createResModelSelect.setEnabled(False)
             self.dlg.createResFeatureSelect.setEnabled(False)
             self.dlg.addNewRes.setEnabled(False)
-            self.dlg.resetNewResSelection.setEnabled(False)
+            self.dlg.createHidePSQLLayers.setEnabled(False)
                 
-            # to run when layer is changed in create resource
-            self.dlg.createResFeatureSelect.currentIndexChanged.connect(self.update_map_layers)
+            # to run when layer is changed in create resource and edit resource tabs
+            self.dlg.createResFeatureSelect.highlighted.connect(lambda: self.update_map_layers(combobox1=self.dlg.createResFeatureSelect,
+                                                                                               combobox2=self.dlg.editResSelectFeatures,
+                                                                                               checkbox=self.dlg.createHidePSQLLayers))
+            self.dlg.editResSelectFeatures.highlighted.connect(lambda: self.update_map_layers(combobox1=self.dlg.editResSelectFeatures,
+                                                                                              combobox2=self.dlg.createResFeatureSelect,
+                                                                                              checkbox=self.dlg.editHidePSQLLayers))
+
+            # psql layers checkbox
+            self.dlg.createHidePSQLLayers.stateChanged.connect(lambda: self.show_hide_psql_layers(checkbox1=self.dlg.createHidePSQLLayers,
+                                                                                                  checkbox2=self.dlg.editHidePSQLLayers,
+                                                                                                  combobox1=self.dlg.createResFeatureSelect,
+                                                                                                  combobox2=self.dlg.editResSelectFeatures))
+            self.dlg.editHidePSQLLayers.stateChanged.connect(lambda: self.show_hide_psql_layers(checkbox1=self.dlg.editHidePSQLLayers,
+                                                                                                checkbox2=self.dlg.createHidePSQLLayers,
+                                                                                                combobox1=self.dlg.editResSelectFeatures,
+                                                                                                combobox2=self.dlg.createResFeatureSelect))
+
             # to run when graph is changed in create resource
-            self.dlg.createResModelSelect.currentIndexChanged.connect(self.update_graph_options)
+            # self.dlg.createResModelSelect.currentIndexChanged.connect(self.update_graph_options)
 
             # click add button - should bring up new dialog for confirmation
             self.dlg.addNewRes.clicked.connect(self.create_resource)
@@ -253,6 +271,7 @@ class ArchesProject:
             self.dlg.editResSelectFeatures.setEnabled(False)
             #self.dlg.selectedResAttributeTable.setRowCount(0)
             self.dlg.selectedResAttributeTable.setEnabled(False)
+            self.dlg.editHidePSQLLayers.setEnabled(False)
 
             self.dlg.addEditRes.clicked.connect(lambda: self.edit_resource(replace=False))
             self.dlg.replaceEditRes.clicked.connect(lambda: self.edit_resource(replace=True))
@@ -353,15 +372,56 @@ class ArchesProject:
 
 
 
-    def update_map_layers(self):
-        selectedLayerIndex = self.dlg.createResFeatureSelect.currentIndex()
-        selectedLayer = self.layers[selectedLayerIndex]
+    def update_map_layers(self, checkbox, combobox1, combobox2):
+        """Function to update new vector layers dynamically """
+
+        if (checkbox.checkState()) == 2:
+            all_current_layers = [l for l in QgsProject.instance().mapLayers().values() if l.type() == QgsVectorLayer.VectorLayer if str(l.dataProvider().name()) != "postgres"] 
+        
+        elif (checkbox.checkState()) == 0:
+            all_current_layers = [l for l in QgsProject.instance().mapLayers().values() if l.type() == QgsVectorLayer.VectorLayer]
 
 
+        if self.layers != all_current_layers:
+            self.layers = all_current_layers
 
-    def update_graph_options(self):
-        selectedGraphIndex = self.dlg.createResModelSelect.currentIndex()
-        selectedGraph = self.arches_graphs_list[selectedGraphIndex]    
+            combobox1.blockSignals(True)
+            combobox1.clear()
+            combobox1.addItems([layer.name() for layer in self.layers])
+            # combobox.setCurrentIndex(0)
+            combobox1.blockSignals(False)
+
+            combobox2.blockSignals(True)
+            combobox2.clear()
+            combobox2.addItems([layer.name() for layer in self.layers])
+            # combobox.setCurrentIndex(0)
+            combobox2.blockSignals(False)
+
+
+    def show_hide_psql_layers(self, checkbox1, checkbox2, combobox1, combobox2):
+        """Reflect change made by checkbox to show or hide PSQL layers from self.layers"""
+        # TODO: Not sure I like the way this works but it works
+
+        def change_both_comboboxes(c):
+            c.blockSignals(True)
+            c.clear()
+            c.addItems([layer.name() for layer in self.layers])
+            c.blockSignals(False)
+            # print(self.layers, "\n")
+
+
+        # if checkbox1 is checked then check checkbox2
+        if (checkbox1.checkState()) == 2:
+            checkbox2.setChecked(True)
+            self.layers = [l for l in QgsProject.instance().mapLayers().values() if l.type() == QgsVectorLayer.VectorLayer if str(l.dataProvider().name()) != "postgres"]
+            change_both_comboboxes(combobox1)
+            change_both_comboboxes(combobox2)
+
+        elif (checkbox1.checkState()) == 0:
+            checkbox2.setChecked(False)
+            self.layers = [l for l in QgsProject.instance().mapLayers().values() if l.type() == QgsVectorLayer.VectorLayer]
+            change_both_comboboxes(combobox1)
+            change_both_comboboxes(combobox2)
 
 
 
@@ -392,31 +452,40 @@ class ArchesProject:
         selectedGraphIndex = self.dlg.createResModelSelect.currentIndex()
         selectedGraph = self.arches_graphs_list[selectedGraphIndex]
 
+        print("SELECTED QGIS LAYER FOR CREATING RESOURCE %s" % selectedLayer)
+
+
         # Would use shapely to create GEOMETRYCOLLECTION but that'd require users to install the dependency themselves
         # this is the alternative        
         all_features = [feature.geometry().asWkt() for feature in selectedLayer.getFeatures()]
 
         # Dynamic dict to show the number of each type of geom on the dialog
-        geometry_type_dict = {}
+        geometry_type_dict = {"Point":33,"Polygon":1111,"Line":12,"more":1,"stuff":1,"here":0}
         
         for feature in selectedLayer.getFeatures():
             geom = feature.geometry()
             geomtype = str(geom.type()).split(".")
+            print(geomtype)
             if geomtype[-1] not in geometry_type_dict:
                 geometry_type_dict[geomtype[-1]] = 1
             else:
                 geometry_type_dict[geomtype[-1]] += 1
 
 
-        # open dialog
-        self.dlg_resource_creation.show()
 
         # Format text box
         self.dlg_resource_creation.infoText.viewport().setAutoFillBackground(False) # Sets the text box to be invisible
         self.dlg_resource_creation.infoText.setText("")
-        self.dlg_resource_creation.infoText.append("Resource will be created with the following geometries:\n\n")
+        self.dlg_resource_creation.infoText.append("Resource will be created with the following geometries:\n")
         for k,v in geometry_type_dict.items():
-            self.dlg_resource_creation.infoText.append(f"{k}: {v}\n")
+            self.dlg_resource_creation.infoText.append(f"{k}: {v}")
+        textboxcontents = str(self.dlg_resource_creation.infoText.toPlainText())
+        print(textboxcontents.splitlines())
+
+        # self.dlg_resource_creation.setHeight()
+
+        # open dialog
+        self.dlg_resource_creation.show()
 
         # Push button responses    
         self.dlg_resource_creation.createDialogCreate.clicked.connect(send_new_resource_to_arches)
@@ -430,6 +499,7 @@ class ArchesProject:
         if self.arches_selected_resource:
             selectedLayerIndex = self.dlg.editResSelectFeatures.currentIndex()
             selectedLayer = self.layers[selectedLayerIndex]
+            print("SELECTED QGIS LAYER FOR EDITING RESOURCE %s" % selectedLayer)
 
             # Would use shapely to create GEOMETRYCOLLECTION but that'd require users to install the dependency themselves
             # this is the alternative        
@@ -505,13 +575,14 @@ class ArchesProject:
         self.dlg.createResModelSelect.setEnabled(False)
         self.dlg.createResFeatureSelect.setEnabled(False)
         self.dlg.addNewRes.setEnabled(False)
-        self.dlg.resetNewResSelection.setEnabled(False)
+        self.dlg.createHidePSQLLayers.setEnabled(False)
         ## Set "Edit Resource" to false to begin with
         self.dlg.addEditRes.setEnabled(False)
         self.dlg.replaceEditRes.setEnabled(False)
         self.dlg.editResSelectFeatures.setEnabled(False)
         self.dlg.selectedResAttributeTable.setRowCount(0)
         self.dlg.selectedResAttributeTable.setEnabled(False)
+        self.dlg.editHidePSQLLayers.setEnabled(False)
 
 
 
@@ -538,7 +609,7 @@ class ArchesProject:
                 clientid = response.json()["clientid"]
                 return clientid
             except:
-                self.dlg.connection_status.append("Can't get client ID.\n- Check username and password are correct.\n- Check the Arches instance is running.\n- Check the instance has a registered Oauth application.")
+                self.dlg.connection_status.setText("Failed to connect.\n- Check URL, username and password are correct.\n- Check the Arches instance is running.\n- Check the instance has a registered Oauth application.")
                 return None
             
         def get_token(url, clientid):
@@ -554,7 +625,7 @@ class ArchesProject:
                 self.arches_token["formatted_url"] = url
                 self.arches_token["time"] = str(datetime.now())
             except:
-                self.dlg.connection_status.append("Can't get token.")
+                self.dlg.connection_status.setText("Can't get Arches oauth2 token.")
 
         def get_graphs(url):
             try:
@@ -579,79 +650,97 @@ class ArchesProject:
                             })
             except:
                 pass
+            
 
         # reset connection status on button press
         self.dlg.connection_status.setText("")
 
-        if self.dlg.arches_server_input.text() == "":
+        is_valid_input = True
+        if self.dlg.arches_server_input.text() == "" or str(self.dlg.arches_server_input.text()).isspace() == True:
             self.dlg.connection_status.append("Please enter the URL to your Arches project.")
+            is_valid_input = False
         if self.dlg.username_input.text() == "":    
             self.dlg.connection_status.append("Please enter your username.")
+            is_valid_input = False
         if self.dlg.password_input.text() == "":
             self.dlg.connection_status.append("Please enter your password.")
+            is_valid_input = False
 
 
         # URL field has data in
-        if self.dlg.arches_server_input.text() != "":
-            formatted_url = format_url()
+        print(is_valid_input)
+        if is_valid_input == True:
+            if self.dlg.arches_server_input.text() != "":
+                formatted_url = format_url()
 
-            clientid = get_clientid(formatted_url)
-            if clientid:
-                # If client id NOT None then connection has been made
-                # check cache first before firing connection again
+                self.dlg.connection_status.setText("Connecting...")
 
-                # re-fetch graphs before checking cache as updates may have occurred
-                self.arches_graphs_list = []
-                get_graphs(formatted_url) 
-                print(self.arches_graphs_list)
+                clientid = get_clientid(formatted_url)
+                if clientid:
+                    # If client id NOT None then connection has been made
+                    # check cache first before firing connection again
 
-                if self.arches_connection_cache:
-                    if (self.dlg.arches_server_input.text() == self.arches_connection_cache["url"] and
-                        self.dlg.username_input.text() == self.arches_connection_cache["username"]):
-                        self.dlg.connection_status.append("Connected to Arches instance.")   
-                        print("Unchanged inputs")
-                        return            
+                    # re-fetch graphs before checking cache as updates may have occurred
+                    self.arches_graphs_list = []
+                    get_graphs(formatted_url) 
+                    print(self.arches_graphs_list)
 
-                get_token(formatted_url, clientid)
+                    if self.arches_connection_cache:
+                        # IF THE CACHE IS UNCHANGED THEN DON'T REFIRE CONNECTION
+                        if (self.dlg.arches_server_input.text() == self.arches_connection_cache["url"] and
+                            self.dlg.username_input.text() == self.arches_connection_cache["username"]):
+                            self.dlg.connection_status.setText("Connection reattempt prevented as login details remain unchanged. \nGraphs have been refetched to reflect changed made on Arches.")   
+                            # Re-fetch the graphs with updated list
+                            if self.arches_graphs_list:
+                                self.dlg.createResModelSelect.clear()
+                                self.dlg.createResModelSelect.addItems([graph["name"] for graph in self.arches_graphs_list])
+                            # Re-fill the comboboxes
+                            self.layers = [l for l in QgsProject.instance().mapLayers().values() if l.type() == QgsVectorLayer.VectorLayer if str(l.dataProvider().name()) != "postgres"] 
+                            self.dlg.createResFeatureSelect.clear()
+                            self.dlg.createResFeatureSelect.addItems([layer.name() for layer in self.layers])
+                            self.dlg.editResSelectFeatures.clear()
+                            self.dlg.editResSelectFeatures.addItems([layer.name() for layer in self.layers])
+                            return            
 
-                self.dlg.connection_status.append("Connected to Arches instance.")  
-                self.dlg.selectedResUUID.setText("Connected to Arches. Select an Arches resource to proceed.")
+                    get_token(formatted_url, clientid)
 
-                # Store for preventing duplicate connection requests
-                self.arches_connection_cache = {"url": self.dlg.arches_server_input.text(),
-                                                "username": self.dlg.username_input.text()}
-                
+                    self.dlg.connection_status.setText("Connected to Arches instance.")  
+                    self.dlg.selectedResUUID.setText("Connected to Arches. Select an Arches resource to proceed.")
 
-                # Create resource tab
-                self.dlg.createResModelSelect.clear()
-                # if self.arches_token:
-                all_layers = list(QgsProject.instance().mapLayers().values())
-                # only get vector layers
-                self.layers = [layer for layer in all_layers if isinstance(layer,QgsVectorLayer)]
+                    # Store for preventing duplicate connection requests
+                    self.arches_connection_cache = {"url": self.dlg.arches_server_input.text(),
+                                                    "username": self.dlg.username_input.text()}
+                    
 
-                self.dlg.createResFeatureSelect.setEnabled(True)
-                self.dlg.createResFeatureSelect.clear()
-                self.dlg.createResFeatureSelect.addItems([layer.name() for layer in self.layers])
-                
-                if self.arches_graphs_list:
-                    self.dlg.createResModelSelect.setEnabled(True)
-                    self.dlg.createResModelSelect.addItems([graph["name"] for graph in self.arches_graphs_list])
+                    # Create resource tab
+                    self.dlg.createResModelSelect.clear()
+                    # get all vector layers
+                    self.layers = [l for l in QgsProject.instance().mapLayers().values() if l.type() == QgsVectorLayer.VectorLayer if str(l.dataProvider().name()) != "postgres"] 
 
-                    self.dlg.addNewRes.setEnabled(True)
-                    self.dlg.resetNewResSelection.setEnabled(True)
+                    self.dlg.createResFeatureSelect.setEnabled(True)
+                    self.dlg.createResFeatureSelect.clear()
+                    self.dlg.createResFeatureSelect.addItems([layer.name() for layer in self.layers])
+                    
+                    if self.arches_graphs_list:
+                        self.dlg.createResModelSelect.setEnabled(True)
+                        self.dlg.createResModelSelect.addItems([graph["name"] for graph in self.arches_graphs_list])
 
-                # Edit resources tab
-                self.dlg.addEditRes.setEnabled(False)
-                self.dlg.replaceEditRes.setEnabled(False)
-                if self.arches_selected_resource:
-                    self.dlg.addEditRes.setEnabled(True)
-                    self.dlg.replaceEditRes.setEnabled(True)
-                self.dlg.editResSelectFeatures.setEnabled(True)
-                self.dlg.editResSelectFeatures.addItems([layer.name() for layer in self.layers])
-                self.dlg.selectedResAttributeTable.setEnabled(True)
+                        self.dlg.addNewRes.setEnabled(True)
+                        self.dlg.createHidePSQLLayers.setEnabled(True)
+
+                    # Edit resources tab
+                    self.dlg.addEditRes.setEnabled(False)
+                    self.dlg.replaceEditRes.setEnabled(False)
+                    self.dlg.editHidePSQLLayers.setEnabled(True)
+                    if self.arches_selected_resource["resourceinstanceid"]:
+                        self.dlg.addEditRes.setEnabled(True)
+                        self.dlg.replaceEditRes.setEnabled(True)
+                    self.dlg.editResSelectFeatures.setEnabled(True)
+                    self.dlg.editResSelectFeatures.clear()
+                    self.dlg.editResSelectFeatures.addItems([layer.name() for layer in self.layers])
+                    self.dlg.selectedResAttributeTable.setEnabled(True)
 
 
             else:
                 # If clientid is None i.e no connection, reset cache and token to {}
                 self.arches_connection_reset(hard_reset=False)
-

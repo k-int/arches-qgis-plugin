@@ -18,7 +18,7 @@
   </property>
   <property name="windowIcon">
    <iconset>
-    <normaloff>icon.png</normaloff>icon.png</iconset>
+    <normaloff>icons/arches_transparent_bg.png</normaloff>icons/arches_transparent_bg.png</iconset>
   </property>
   <property name="modal">
    <bool>false</bool>
@@ -325,6 +325,16 @@
                     <item>
                      <widget class="QComboBox" name="createResFeatureSelect"/>
                     </item>
+                    <item>
+                     <widget class="QCheckBox" name="createHidePSQLLayers">
+                      <property name="text">
+                       <string>Hide PostgreSQL layers</string>
+                      </property>
+                      <property name="checked">
+                       <bool>true</bool>
+                      </property>
+                     </widget>
+                    </item>
                    </layout>
                   </widget>
                  </item>
@@ -370,13 +380,6 @@
                   <widget class="QPushButton" name="addNewRes">
                    <property name="text">
                     <string>Add</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
-                  <widget class="QPushButton" name="resetNewResSelection">
-                   <property name="text">
-                    <string>Reset</string>
                    </property>
                   </widget>
                  </item>
@@ -546,6 +549,16 @@
                  </item>
                  <item>
                   <widget class="QComboBox" name="editResSelectFeatures"/>
+                 </item>
+                 <item>
+                  <widget class="QCheckBox" name="editHidePSQLLayers">
+                   <property name="text">
+                    <string>Hide PostgreSQL Layers</string>
+                   </property>
+                   <property name="checked">
+                    <bool>true</bool>
+                   </property>
+                  </widget>
                  </item>
                  <item>
                   <widget class="QFrame" name="frame_13">

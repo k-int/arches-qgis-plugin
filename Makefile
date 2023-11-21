@@ -48,7 +48,7 @@ PY_FILES = \
 
 UI_FILES = arches_project_dialog_base.ui
 
-EXTRAS = metadata.txt icon.png
+EXTRAS = metadata.txt icons/arches.png
 
 EXTRA_DIRS =
 
@@ -65,7 +65,7 @@ PEP8EXCLUDE=pydev,resources.py,conf.py,third_party,ui
 #	* Windows:
 #	  AppData\Roaming\QGIS\QGIS3\profiles\default\python\plugins'
 
-QGISDIR=C:\Users\Samuel\AppData/Roaming/QGIS/QGIS3/profiles/default/python/plugins
+# QGISDIR=C:\Users\Samuel\AppData/Roaming/QGIS/QGIS3/profiles/default/python/plugins
 
 #################################################
 # Normally you would not need to edit below here

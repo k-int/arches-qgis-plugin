@@ -526,12 +526,14 @@ class ArchesProject:
                                                 geometry_collection=geomcoll,
                                                 geometry_format=None,
                                                 arches_operation=operation_type)
+                print("adding data")
                 dialog.close()
             except:
                 print(f"Couldn't {operation_type} geometry in resource")
                 dialog.close()
 
         def close_dialog(dialog):
+
             dialog.close()
 
 
@@ -546,12 +548,14 @@ class ArchesProject:
                 # Format text box
                 self.dlg_edit_resource_replace.infoText.viewport().setAutoFillBackground(False) # Sets the text box to be invisible
                 self.dlg_edit_resource_replace.infoText.setText("")
-                self.dlg_edit_resource_replace.infoText.append("The Arches resource's geometry will be replaced with the following geometries:\n")
+                self.dlg_edit_resource_replace.infoText.append("The following geometries will be replace the existing Arches resource's geometries:\n")
                 for k,v in geometry_type_dict.items():
                     self.dlg_edit_resource_replace.infoText.append(f"{k}: {v}")
 
+                self.dlg_edit_resource_replace.editDialogCreate.disconnect()
                 self.dlg_edit_resource_replace.editDialogCreate.clicked.connect(lambda: send_edited_data_to_arches(operation_type="create",
                                                                                         dialog=self.dlg_edit_resource_replace))
+                self.dlg_edit_resource_replace.editDialogCancel.disconnect()
                 self.dlg_edit_resource_replace.editDialogCancel.clicked.connect(lambda: close_dialog(dialog=self.dlg_edit_resource_replace))
                 # Show confirmation dialog
                 self.dlg_edit_resource_replace.show()
@@ -565,8 +569,10 @@ class ArchesProject:
                 for k,v in geometry_type_dict.items():
                     self.dlg_edit_resource_add.infoText.append(f"{k}: {v}")
 
+                self.dlg_edit_resource_add.editDialogCreate.disconnect()
                 self.dlg_edit_resource_add.editDialogCreate.clicked.connect(lambda: send_edited_data_to_arches(operation_type="append",
                                                                                     dialog=self.dlg_edit_resource_add))
+                self.dlg_edit_resource_add.editDialogCancel.disconnect()
                 self.dlg_edit_resource_add.editDialogCancel.clicked.connect(lambda: close_dialog(dialog=self.dlg_edit_resource_add))
                 # Show confirmation dialog
                 self.dlg_edit_resource_add.show()

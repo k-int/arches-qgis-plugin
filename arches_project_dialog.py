@@ -31,9 +31,6 @@ from qgis.PyQt import QtWidgets
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'arches_project_dialog_base.ui'))
 
-# FORM_CLASS1, _ = uic.loadUiType(os.path.join(
-#     os.path.dirname(__file__), 'dialog/create_resource_confirmation_dialog.ui'))
-
 
 class ArchesProjectDialog(QtWidgets.QDialog, FORM_CLASS):
     def __init__(self, parent=None):

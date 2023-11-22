@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Create Arches Resource</string>
+   <string>Add Geometries</string>
   </property>
   <property name="windowIcon">
    <iconset>
@@ -24,7 +24,7 @@
    <item>
     <widget class="QLabel" name="label">
      <property name="text">
-      <string>Are you sure you want to CREATE an Arches resource?</string>
+      <string>Are you sure you want to ADD geometries?</string>
      </property>
      <property name="alignment">
       <set>Qt::AlignCenter</set>
@@ -115,14 +115,14 @@ li.checked::marker { content: &quot;\2612&quot;; }
        </spacer>
       </item>
       <item>
-       <widget class="QPushButton" name="createDialogCreate">
+       <widget class="QPushButton" name="editDialogCreate">
         <property name="text">
-         <string>Create</string>
+         <string>Add</string>
         </property>
        </widget>
       </item>
       <item>
-       <widget class="QPushButton" name="createDialogCancel">
+       <widget class="QPushButton" name="editDialogCancel">
         <property name="text">
          <string>Cancel</string>
         </property>

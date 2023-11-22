@@ -34,12 +34,16 @@ from qgis.gui import (QgsAttributeTableView,
 
 # Initialize Qt resources from file resources.py
 from .resources import *
+
 # Import the code for the dialog
 from .arches_project_dialog import ArchesProjectDialog
-import os.path
 
 # Import the confirmation dialogs
 from .dialog.create_resource_confirmation_dialog import CreateResourceConfirmation
+from .dialog.edit_resource_add_confirmation_dialog import EditResourceAddConfirmation
+from .dialog.edit_resource_replace_confirmation_dialog import EditResourceReplaceConfirmation
+
+import os.path
 #from shapely import GeometryCollection
 import requests
 from datetime import datetime
@@ -219,6 +223,8 @@ class ArchesProject:
             self.first_start = False
             self.dlg = ArchesProjectDialog()
             self.dlg_resource_creation = CreateResourceConfirmation()
+            self.dlg_edit_resource_add = EditResourceAddConfirmation()
+            self.dlg_edit_resource_replace = EditResourceReplaceConfirmation()
 
             ## Have everything called in here so multiple connections aren't made when plugin button pressed
             # This way only one connection is made at a time
@@ -281,7 +287,6 @@ class ArchesProject:
         self.dlg.show()
         # Run the dialog event loop
         result = self.dlg.exec_()
-        print(result)
         # See if OK was pressed
         if result:
             # Do something useful here - delete the line containing pass and
@@ -357,7 +362,6 @@ class ArchesProject:
                         self.dlg.replaceEditRes.setEnabled(True)
 
                         # Save resource instance details once selected
-                        print(self.arches_selected_resource)
                     else:
                         self.dlg.selectedResUUID.setText("Connect to your Arches instance to edit resources.")
                         self.dlg.addEditRes.setEnabled(False)
@@ -369,7 +373,6 @@ class ArchesProject:
                         self.dlg.selectedResUUID.setText("The feature selected is not an Arches resource.")
                     else:
                         self.dlg.selectedResUUID.setText("Connect to your Arches instance to edit resources.")
-
 
 
     def update_map_layers(self, checkbox, combobox1, combobox2):
@@ -425,12 +428,52 @@ class ArchesProject:
 
 
 
+    def geometry_conversion(self, selectedLayer):
+        """Convert QGIS geometries into Arches"""
+
+        # TODO: QGIS stores all polygons named as multipolygons even though they're separate and 
+        # all multipoints as individual multipoints - these should be separated 
+        geom_and_count = {} # to store geom type and how many 
+
+        # Find what type and how many we are dealing with
+        # for feature in selectedLayer.getFeatures():
+        #     geomtype = str(feature.geometry().type()).split(".")
+        #     if geomtype[-1] not in geom_and_count:
+        #         geom_and_count[geomtype[-1]] = 1
+        #     else:
+        #         geom_and_count[geomtype[-1]] += 1
+        #     print(feature.geometry().asPolygon())
+
+        # if "Polygon" in geom_and_count.keys():
+        #     if geom_and_count["Polygon"] == 1:
+        #         all_features = [feature.geometry().asWkt() for feature in selectedLayer.getFeatures()]
+        #         combined_feature = (','.join(all_features))
+        #         combined_feature = combined_feature.replace("MultiPolygon","Polygon")
+        #         return combined_feature
+
+        # Return info for the confirmation dialog text box
+        geometry_type_dict = {}
+        for feature in selectedLayer.getFeatures():
+            geom = feature.geometry()
+            geomtype = str(geom.type()).split(".")
+            if geomtype[-1] not in geometry_type_dict:
+                geometry_type_dict[geomtype[-1]] = 1
+            else:
+                geometry_type_dict[geomtype[-1]] += 1
+
+        # Would use shapely to create GEOMETRYCOLLECTION but that'd require users to install the dependency themselves
+        # this is the alternative        
+        all_features = [feature.geometry().asWkt() for feature in selectedLayer.getFeatures()]
+        geomcoll = "GEOMETRYCOLLECTION (%s)" % (','.join(all_features))
+        
+        return geomcoll, geometry_type_dict
+
+
+
     def create_resource(self):
         """Create Resource dialog and functionality"""
 
         def send_new_resource_to_arches():
-            geomcoll = "GEOMETRYCOLLECTION (%s)" % (','.join(all_features))
-
             try:
                 results = self.save_to_arches(tileid=None,
                                             nodeid = selectedGraph["node_id"],
@@ -440,8 +483,10 @@ class ArchesProject:
                 self.dlg.createResOutputBox.setText("""Successfully created a new resource with the selected geometry.
                                                     \nTo continue the creation of your new resource, navigate to...\n%s/resource/%s""" % 
                                                   (self.arches_token["formatted_url"], results["resourceinstance_id"]))
+                self.dlg_resource_creation.close()
             except:
-                self.dlg.createResOutputBox.setText("Could not create resource")
+                self.dlg.createResOutputBox.setText("Resource creation FAILED.")
+                self.dlg_resource_creation.close()
 
         def close_dialog():
             self.dlg_resource_creation.close()
@@ -452,37 +497,14 @@ class ArchesProject:
         selectedGraphIndex = self.dlg.createResModelSelect.currentIndex()
         selectedGraph = self.arches_graphs_list[selectedGraphIndex]
 
-        print("SELECTED QGIS LAYER FOR CREATING RESOURCE %s" % selectedLayer)
-
-
-        # Would use shapely to create GEOMETRYCOLLECTION but that'd require users to install the dependency themselves
-        # this is the alternative        
-        all_features = [feature.geometry().asWkt() for feature in selectedLayer.getFeatures()]
-
-        # Dynamic dict to show the number of each type of geom on the dialog
-        geometry_type_dict = {"Point":33,"Polygon":1111,"Line":12,"more":1,"stuff":1,"here":0}
-        
-        for feature in selectedLayer.getFeatures():
-            geom = feature.geometry()
-            geomtype = str(geom.type()).split(".")
-            print(geomtype)
-            if geomtype[-1] not in geometry_type_dict:
-                geometry_type_dict[geomtype[-1]] = 1
-            else:
-                geometry_type_dict[geomtype[-1]] += 1
-
-
-
+        geomcoll, geometry_type_dict = self.geometry_conversion(selectedLayer)
+     
         # Format text box
         self.dlg_resource_creation.infoText.viewport().setAutoFillBackground(False) # Sets the text box to be invisible
         self.dlg_resource_creation.infoText.setText("")
-        self.dlg_resource_creation.infoText.append("Resource will be created with the following geometries:\n")
+        self.dlg_resource_creation.infoText.append("An Arches resource will be created with the following geometries:\n")
         for k,v in geometry_type_dict.items():
             self.dlg_resource_creation.infoText.append(f"{k}: {v}")
-        textboxcontents = str(self.dlg_resource_creation.infoText.toPlainText())
-        print(textboxcontents.splitlines())
-
-        # self.dlg_resource_creation.setHeight()
 
         # open dialog
         self.dlg_resource_creation.show()
@@ -496,38 +518,58 @@ class ArchesProject:
 
     def edit_resource(self, replace):
         """Save geometries to existing resource - either replace or add"""
+
+        def send_edited_data_to_arches(operation_type, dialog):
+            try:
+                results = self.save_to_arches(tileid=self.arches_selected_resource["tileid"],
+                                                nodeid = self.arches_selected_resource["nodeid"],
+                                                geometry_collection=geomcoll,
+                                                geometry_format=None,
+                                                arches_operation=operation_type)
+                dialog.close()
+            except:
+                print(f"Couldn't {operation_type} geometry in resource")
+                dialog.close()
+
+        def close_dialog(dialog):
+            dialog.close()
+
+
         if self.arches_selected_resource:
             selectedLayerIndex = self.dlg.editResSelectFeatures.currentIndex()
             selectedLayer = self.layers[selectedLayerIndex]
-            print("SELECTED QGIS LAYER FOR EDITING RESOURCE %s" % selectedLayer)
 
-            # Would use shapely to create GEOMETRYCOLLECTION but that'd require users to install the dependency themselves
-            # this is the alternative        
-            all_features = [feature.geometry().asWkt() for feature in selectedLayer.getFeatures()]
-
-            geomcoll = "GEOMETRYCOLLECTION (%s)" % (','.join(all_features))
+            geomcoll, geometry_type_dict = self.geometry_conversion(selectedLayer)
 
             # Replace geometry
             if replace == True:
-                try:
-                    results = self.save_to_arches(tileid=self.arches_selected_resource["tileid"],
-                                                nodeid = self.arches_selected_resource["nodeid"],
-                                                geometry_collection=geomcoll,
-                                                geometry_format=None,
-                                                arches_operation="create")
-                except:
-                    print("Couldn't replace geometry in resource")
+                # Format text box
+                self.dlg_edit_resource_replace.infoText.viewport().setAutoFillBackground(False) # Sets the text box to be invisible
+                self.dlg_edit_resource_replace.infoText.setText("")
+                self.dlg_edit_resource_replace.infoText.append("The Arches resource's geometry will be replaced with the following geometries:\n")
+                for k,v in geometry_type_dict.items():
+                    self.dlg_edit_resource_replace.infoText.append(f"{k}: {v}")
+
+                self.dlg_edit_resource_replace.editDialogCreate.clicked.connect(lambda: send_edited_data_to_arches(operation_type="create",
+                                                                                        dialog=self.dlg_edit_resource_replace))
+                self.dlg_edit_resource_replace.editDialogCancel.clicked.connect(lambda: close_dialog(dialog=self.dlg_edit_resource_replace))
+                # Show confirmation dialog
+                self.dlg_edit_resource_replace.show()
 
             # Add geometry to the resource
             else:
-                try:
-                    results = self.save_to_arches(tileid=self.arches_selected_resource["tileid"],
-                                                nodeid = self.arches_selected_resource["nodeid"],
-                                                geometry_collection=geomcoll,
-                                                geometry_format=None,
-                                                arches_operation="append")
-                except:
-                    print("Couldn't add geometry to resource")
+                # Format text box
+                self.dlg_edit_resource_add.infoText.viewport().setAutoFillBackground(False) # Sets the text box to be invisible
+                self.dlg_edit_resource_add.infoText.setText("")
+                self.dlg_edit_resource_add.infoText.append("The following geometries will be added to the Arches resource:\n")
+                for k,v in geometry_type_dict.items():
+                    self.dlg_edit_resource_add.infoText.append(f"{k}: {v}")
+
+                self.dlg_edit_resource_add.editDialogCreate.clicked.connect(lambda: send_edited_data_to_arches(operation_type="append",
+                                                                                    dialog=self.dlg_edit_resource_add))
+                self.dlg_edit_resource_add.editDialogCancel.clicked.connect(lambda: close_dialog(dialog=self.dlg_edit_resource_add))
+                # Show confirmation dialog
+                self.dlg_edit_resource_add.show()
 
 
 
@@ -624,6 +666,13 @@ class ArchesProject:
                 self.arches_token = response.json()
                 self.arches_token["formatted_url"] = url
                 self.arches_token["time"] = str(datetime.now())
+
+                # If the token has an error status in it then break
+                if "error" in self.arches_token.keys():
+                    error_msg = self.arches_token["error"]
+                    self.arches_token = {} # reset token to empty
+                    self.dlg.connection_status.setText(f"Error connecting to token: {error_msg}.")
+
             except:
                 self.dlg.connection_status.setText("Can't get Arches oauth2 token.")
 
@@ -668,7 +717,6 @@ class ArchesProject:
 
 
         # URL field has data in
-        print(is_valid_input)
         if is_valid_input == True:
             if self.dlg.arches_server_input.text() != "":
                 formatted_url = format_url()
@@ -683,7 +731,6 @@ class ArchesProject:
                     # re-fetch graphs before checking cache as updates may have occurred
                     self.arches_graphs_list = []
                     get_graphs(formatted_url) 
-                    print(self.arches_graphs_list)
 
                     if self.arches_connection_cache:
                         # IF THE CACHE IS UNCHANGED THEN DON'T REFIRE CONNECTION
@@ -704,41 +751,43 @@ class ArchesProject:
 
                     get_token(formatted_url, clientid)
 
-                    self.dlg.connection_status.setText("Connected to Arches instance.")  
-                    self.dlg.selectedResUUID.setText("Connected to Arches. Select an Arches resource to proceed.")
+                    if self.arches_token:
 
-                    # Store for preventing duplicate connection requests
-                    self.arches_connection_cache = {"url": self.dlg.arches_server_input.text(),
-                                                    "username": self.dlg.username_input.text()}
-                    
+                        self.dlg.connection_status.setText("Connected to Arches instance.")  
+                        self.dlg.selectedResUUID.setText("Connected to Arches. Select an Arches resource to proceed.")
 
-                    # Create resource tab
-                    self.dlg.createResModelSelect.clear()
-                    # get all vector layers
-                    self.layers = [l for l in QgsProject.instance().mapLayers().values() if l.type() == QgsVectorLayer.VectorLayer if str(l.dataProvider().name()) != "postgres"] 
+                        # Store for preventing duplicate connection requests
+                        self.arches_connection_cache = {"url": self.dlg.arches_server_input.text(),
+                                                        "username": self.dlg.username_input.text()}
+                        
 
-                    self.dlg.createResFeatureSelect.setEnabled(True)
-                    self.dlg.createResFeatureSelect.clear()
-                    self.dlg.createResFeatureSelect.addItems([layer.name() for layer in self.layers])
-                    
-                    if self.arches_graphs_list:
-                        self.dlg.createResModelSelect.setEnabled(True)
-                        self.dlg.createResModelSelect.addItems([graph["name"] for graph in self.arches_graphs_list])
+                        # Create resource tab
+                        self.dlg.createResModelSelect.clear()
+                        # get all vector layers
+                        self.layers = [l for l in QgsProject.instance().mapLayers().values() if l.type() == QgsVectorLayer.VectorLayer if str(l.dataProvider().name()) != "postgres"] 
 
-                        self.dlg.addNewRes.setEnabled(True)
-                        self.dlg.createHidePSQLLayers.setEnabled(True)
+                        self.dlg.createResFeatureSelect.setEnabled(True)
+                        self.dlg.createResFeatureSelect.clear()
+                        self.dlg.createResFeatureSelect.addItems([layer.name() for layer in self.layers])
+                        
+                        if self.arches_graphs_list:
+                            self.dlg.createResModelSelect.setEnabled(True)
+                            self.dlg.createResModelSelect.addItems([graph["name"] for graph in self.arches_graphs_list])
 
-                    # Edit resources tab
-                    self.dlg.addEditRes.setEnabled(False)
-                    self.dlg.replaceEditRes.setEnabled(False)
-                    self.dlg.editHidePSQLLayers.setEnabled(True)
-                    if self.arches_selected_resource["resourceinstanceid"]:
-                        self.dlg.addEditRes.setEnabled(True)
-                        self.dlg.replaceEditRes.setEnabled(True)
-                    self.dlg.editResSelectFeatures.setEnabled(True)
-                    self.dlg.editResSelectFeatures.clear()
-                    self.dlg.editResSelectFeatures.addItems([layer.name() for layer in self.layers])
-                    self.dlg.selectedResAttributeTable.setEnabled(True)
+                            self.dlg.addNewRes.setEnabled(True)
+                            self.dlg.createHidePSQLLayers.setEnabled(True)
+
+                        # Edit resources tab
+                        self.dlg.addEditRes.setEnabled(False)
+                        self.dlg.replaceEditRes.setEnabled(False)
+                        self.dlg.editHidePSQLLayers.setEnabled(True)
+                        if self.arches_selected_resource["resourceinstanceid"]:
+                            self.dlg.addEditRes.setEnabled(True)
+                            self.dlg.replaceEditRes.setEnabled(True)
+                        self.dlg.editResSelectFeatures.setEnabled(True)
+                        self.dlg.editResSelectFeatures.clear()
+                        self.dlg.editResSelectFeatures.addItems([layer.name() for layer in self.layers])
+                        self.dlg.selectedResAttributeTable.setEnabled(True)
 
 
             else:

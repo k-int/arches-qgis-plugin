@@ -93,6 +93,7 @@ class ArchesProject:
         # Store token data to avoid regenerating every connection
         self.arches_token = {}
         self.arches_graphs_list = []
+        self.arches_user_info = {}
         # Store selected arches resource
         self.layers = []
         self.arches_selected_resource = {"resourceinstanceid": "",
@@ -410,7 +411,6 @@ class ArchesProject:
             c.clear()
             c.addItems([layer.name() for layer in self.layers])
             c.blockSignals(False)
-            # print(self.layers, "\n")
 
 
         # if checkbox1 is checked then check checkbox2
@@ -474,18 +474,22 @@ class ArchesProject:
         """Create Resource dialog and functionality"""
 
         def send_new_resource_to_arches():
-            try:
-                results = self.save_to_arches(tileid=None,
-                                            nodeid = selectedGraph["node_id"],
-                                            geometry_collection=geomcoll,
-                                            geometry_format=None,
-                                            arches_operation="create")
-                self.dlg.createResOutputBox.setText("""Successfully created a new resource with the selected geometry.
-                                                    \nTo continue the creation of your new resource, navigate to...\n%s/resource/%s""" % 
-                                                  (self.arches_token["formatted_url"], results["resourceinstance_id"]))
-                self.dlg_resource_creation.close()
-            except:
-                self.dlg.createResOutputBox.setText("Resource creation FAILED.")
+            if selectedGraph["nodegroupid"] in self.arches_user_info["editable_nodegroups"]:
+                try:
+                    results = self.save_to_arches(tileid=None,
+                                                nodeid = selectedGraph["node_id"],
+                                                geometry_collection=geomcoll,
+                                                geometry_format=None,
+                                                arches_operation="create")
+                    self.dlg.createResOutputBox.setText("""Successfully created a new resource with the selected geometry.
+                                                        \nTo continue the creation of your new resource, navigate to...\n%s/resource/%s""" % 
+                                                    (self.arches_token["formatted_url"], results["resourceinstance_id"]))
+                    self.dlg_resource_creation.close()
+                except:
+                    self.dlg.createResOutputBox.setText("Resource creation FAILED.")
+                    self.dlg_resource_creation.close()
+            else:
+                self.dlg.createResOutputBox.setText("This user does not have permission to create data for the geometry nodegroup in this resource model. An Arches resource has not been created.")
                 self.dlg_resource_creation.close()
 
         def close_dialog():
@@ -520,15 +524,19 @@ class ArchesProject:
         """Save geometries to existing resource - either replace or add"""
 
         def send_edited_data_to_arches(operation_type, dialog):
-            try:
-                results = self.save_to_arches(tileid=self.arches_selected_resource["tileid"],
-                                                nodeid = self.arches_selected_resource["nodeid"],
-                                                geometry_collection=geomcoll,
-                                                geometry_format=None,
-                                                arches_operation=operation_type)
-                dialog.close()
-            except:
-                print(f"Couldn't {operation_type} geometry in resource")
+            if nodegroup_value in self.arches_user_info["editable_nodegroups"]:
+                try:
+                    results = self.save_to_arches(tileid=self.arches_selected_resource["tileid"],
+                                                    nodeid = self.arches_selected_resource["nodeid"],
+                                                    geometry_collection=geomcoll,
+                                                    geometry_format=None,
+                                                    arches_operation=operation_type)
+                    dialog.close()
+                except:
+                    print(f"Couldn't {operation_type} geometry in resource")
+                    dialog.close()
+            else:
+                print("This user does not have permission to update data for the geometry nodegroup in this resource model.")
                 dialog.close()
 
         def close_dialog(dialog):
@@ -541,6 +549,11 @@ class ArchesProject:
             selectedLayer = self.layers[selectedLayerIndex]
 
             geomcoll, geometry_type_dict = self.geometry_conversion(selectedLayer)
+
+            # Get nodegroup from graph
+            for graph in self.arches_graphs_list:
+                if graph["node_id"] == self.arches_selected_resource["nodeid"]:
+                    nodegroup_value = graph["nodegroup_id"]
 
             # Replace geometry
             if replace == True:
@@ -614,6 +627,7 @@ class ArchesProject:
             self.dlg.username_input.setText("")
             self.dlg.password_input.setText("")
         # Reset stored data
+        self.arches_user_info = {}
         self.arches_connection_cache = {}
         self.arches_token = {}
         self.arches_graphs_list = []
@@ -660,7 +674,24 @@ class ArchesProject:
             except:
                 self.dlg.connection_status.setText("Failed to connect.\n- Check URL, username and password are correct.\n- Check the Arches instance is running.\n- Check the instance has a registered Oauth application.")
                 return None
-            
+
+        def get_user_permissions(url):
+            try:
+                files = {
+                    'username': (None, self.dlg.username_input.text()),
+                    'password': (None, self.dlg.password_input.text()),
+                }
+                response = requests.post(url+"/auth/user_profile", data=files)
+                self.arches_user_info["deletable_nodegroups"] = response.json()["deletable_nodegroups"]
+                self.arches_user_info["editable_nodegroups"] = response.json()["editable_nodegroups"]
+                self.arches_user_info["groups"] = response.json()["groups"]
+                self.arches_user_info["is_active"] = response.json()["is_active"]
+            except:
+                self.arches_user_info["deletable_nodegroups"] = None
+                self.arches_user_info["editable_nodegroups"] = None
+                self.arches_user_info["is_active"] = None
+                self.arches_user_info["groups"] = []
+
         def get_token(url, clientid):
             try:
                 files = {
@@ -735,9 +766,13 @@ class ArchesProject:
                     # If client id NOT None then connection has been made
                     # check cache first before firing connection again
 
+                    # get/update user info on the logged in user
+                    self.arches_user_info = {}
+                    get_user_permissions(formatted_url)
+
                     # re-fetch graphs before checking cache as updates may have occurred
                     self.arches_graphs_list = []
-                    get_graphs(formatted_url) 
+                    get_graphs(formatted_url)
 
                     if self.arches_connection_cache:
                         # IF THE CACHE IS UNCHANGED THEN DON'T REFIRE CONNECTION
@@ -759,42 +794,48 @@ class ArchesProject:
                     get_token(formatted_url, clientid)
 
                     if self.arches_token:
-
-                        self.dlg.connection_status.setText("Connected to Arches instance.")  
-                        self.dlg.selectedResUUID.setText("Connected to Arches. Select an Arches resource to proceed.")
-
+                        
                         # Store for preventing duplicate connection requests
                         self.arches_connection_cache = {"url": self.dlg.arches_server_input.text(),
                                                         "username": self.dlg.username_input.text()}
-                        
+                                            
+                        if 2 in self.arches_user_info["groups"]:
+                            # THIS IS THE RESOURCE EDITOR PERMISSION
 
-                        # Create resource tab
-                        self.dlg.createResModelSelect.clear()
-                        # get all vector layers
-                        self.layers = [l for l in QgsProject.instance().mapLayers().values() if l.type() == QgsVectorLayer.VectorLayer if str(l.dataProvider().name()) != "postgres"] 
+                            self.dlg.connection_status.setText(f"Connected to Arches instance as user {self.dlg.username_input.text()}.")  
+                            self.dlg.selectedResUUID.setText("Connected to Arches. Select an Arches resource to proceed.")
 
-                        self.dlg.createResFeatureSelect.setEnabled(True)
-                        self.dlg.createResFeatureSelect.clear()
-                        self.dlg.createResFeatureSelect.addItems([layer.name() for layer in self.layers])
-                        
-                        if self.arches_graphs_list:
-                            self.dlg.createResModelSelect.setEnabled(True)
-                            self.dlg.createResModelSelect.addItems([graph["name"] for graph in self.arches_graphs_list])
+                            # Create resource tab
+                            self.dlg.createResModelSelect.clear()
+                            # get all vector layers
+                            self.layers = [l for l in QgsProject.instance().mapLayers().values() if l.type() == QgsVectorLayer.VectorLayer if str(l.dataProvider().name()) != "postgres"] 
 
-                            self.dlg.addNewRes.setEnabled(True)
-                            self.dlg.createHidePSQLLayers.setEnabled(True)
+                            self.dlg.createResFeatureSelect.setEnabled(True)
+                            self.dlg.createResFeatureSelect.clear()
+                            self.dlg.createResFeatureSelect.addItems([layer.name() for layer in self.layers])
+                            
+                            if self.arches_graphs_list:
+                                self.dlg.createResModelSelect.setEnabled(True)
+                                self.dlg.createResModelSelect.addItems([graph["name"] for graph in self.arches_graphs_list])
 
-                        # Edit resources tab
-                        self.dlg.addEditRes.setEnabled(False)
-                        self.dlg.replaceEditRes.setEnabled(False)
-                        self.dlg.editHidePSQLLayers.setEnabled(True)
-                        if self.arches_selected_resource["resourceinstanceid"]:
-                            self.dlg.addEditRes.setEnabled(True)
-                            self.dlg.replaceEditRes.setEnabled(True)
-                        self.dlg.editResSelectFeatures.setEnabled(True)
-                        self.dlg.editResSelectFeatures.clear()
-                        self.dlg.editResSelectFeatures.addItems([layer.name() for layer in self.layers])
-                        self.dlg.selectedResAttributeTable.setEnabled(True)
+                                self.dlg.addNewRes.setEnabled(True)
+                                self.dlg.createHidePSQLLayers.setEnabled(True)
+
+                            # Edit resources tab
+                            self.dlg.addEditRes.setEnabled(False)
+                            self.dlg.replaceEditRes.setEnabled(False)
+                            self.dlg.editHidePSQLLayers.setEnabled(True)
+                            if self.arches_selected_resource["resourceinstanceid"]:
+                                self.dlg.addEditRes.setEnabled(True)
+                                self.dlg.replaceEditRes.setEnabled(True)
+                            self.dlg.editResSelectFeatures.setEnabled(True)
+                            self.dlg.editResSelectFeatures.clear()
+                            self.dlg.editResSelectFeatures.addItems([layer.name() for layer in self.layers])
+                            self.dlg.selectedResAttributeTable.setEnabled(True)
+
+                        else:
+                            self.arches_connection_reset(hard_reset=False)
+                            self.dlg.connection_status.setText("This user does not have the permissions to create Arches resources.")
                 else:
                     self.arches_connection_reset(hard_reset=False)
 

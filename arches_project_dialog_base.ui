@@ -184,14 +184,14 @@
                  <item>
                   <widget class="QPushButton" name="btnSave">
                    <property name="text">
-                    <string>Save</string>
+                    <string>Connect</string>
                    </property>
                   </widget>
                  </item>
                  <item>
                   <widget class="QPushButton" name="btnReset">
                    <property name="text">
-                    <string>Reset</string>
+                    <string>Logout</string>
                    </property>
                   </widget>
                  </item>

@@ -526,7 +526,6 @@ class ArchesProject:
                                                 geometry_collection=geomcoll,
                                                 geometry_format=None,
                                                 arches_operation=operation_type)
-                print("adding data")
                 dialog.close()
             except:
                 print(f"Couldn't {operation_type} geometry in resource")
@@ -610,11 +609,10 @@ class ArchesProject:
         """Reset Arches connection"""
         if hard_reset == True:
             # Reset connection inputs
-            self.dlg.connection_status.setText("")
+            self.dlg.connection_status.setText("Logged out of Arches instance. Please reconnect to use the plugin.")
             self.dlg.arches_server_input.setText("")
             self.dlg.username_input.setText("")
             self.dlg.password_input.setText("")
-            self.dlg.selectedResUUID.setText("Connect to your Arches instance to edit resources.")
         # Reset stored data
         self.arches_connection_cache = {}
         self.arches_token = {}
@@ -624,6 +622,7 @@ class ArchesProject:
         self.dlg.createResFeatureSelect.setEnabled(False)
         self.dlg.addNewRes.setEnabled(False)
         self.dlg.createHidePSQLLayers.setEnabled(False)
+        self.dlg.createResOutputBox.setText("")
         ## Set "Edit Resource" to false to begin with
         self.dlg.addEditRes.setEnabled(False)
         self.dlg.replaceEditRes.setEnabled(False)
@@ -631,6 +630,8 @@ class ArchesProject:
         self.dlg.selectedResAttributeTable.setRowCount(0)
         self.dlg.selectedResAttributeTable.setEnabled(False)
         self.dlg.editHidePSQLLayers.setEnabled(False)
+        self.dlg.selectedResUUID.setText("Connect to your Arches instance to edit resources.")
+
 
 
 
@@ -794,7 +795,8 @@ class ArchesProject:
                         self.dlg.editResSelectFeatures.clear()
                         self.dlg.editResSelectFeatures.addItems([layer.name() for layer in self.layers])
                         self.dlg.selectedResAttributeTable.setEnabled(True)
-
+                else:
+                    self.arches_connection_reset(hard_reset=False)
 
             else:
                 # If clientid is None i.e no connection, reset cache and token to {}

@@ -474,7 +474,7 @@ class ArchesProject:
         """Create Resource dialog and functionality"""
 
         def send_new_resource_to_arches():
-            if selectedGraph["nodegroupid"] in self.arches_user_info["editable_nodegroups"]:
+            if selectedGraph["nodegroup_id"] in self.arches_user_info["editable_nodegroups"]:
                 try:
                     results = self.save_to_arches(tileid=None,
                                                 nodeid = selectedGraph["node_id"],

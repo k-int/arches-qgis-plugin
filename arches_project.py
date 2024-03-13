@@ -283,6 +283,13 @@ class ArchesProject:
             self.dlg.addEditRes.clicked.connect(lambda: self.edit_resource(replace=False))
             self.dlg.replaceEditRes.clicked.connect(lambda: self.edit_resource(replace=True))
 
+            # Hide multiple geometry node selection by default
+            self.dlg.geometryNodeSelectFrame.hide()
+
+            # Check if selected graph has multiple geometry nodes
+            self.dlg.createResModelSelect.currentIndexChanged.connect(self.multiple_geometry_node_check)
+
+
 
         # show the dialog
         self.dlg.show()
@@ -293,7 +300,6 @@ class ArchesProject:
             # Do something useful here - delete the line containing pass and
             # substitute with your code.
             pass
-
 
 
     def map_selection(self):
@@ -376,6 +382,7 @@ class ArchesProject:
                         self.dlg.selectedResUUID.setText("Connect to your Arches instance to edit resources.")
 
 
+
     def update_map_layers(self, checkbox, combobox1, combobox2):
         """Function to update new vector layers dynamically """
 
@@ -400,6 +407,7 @@ class ArchesProject:
             combobox2.addItems([layer.name() for layer in self.layers])
             # combobox.setCurrentIndex(0)
             combobox2.blockSignals(False)
+
 
 
     def show_hide_psql_layers(self, checkbox1, checkbox2, combobox1, combobox2):
@@ -470,14 +478,32 @@ class ArchesProject:
 
 
 
+    def multiple_geometry_node_check(self):
+        selectedGraphIndex = self.dlg.createResModelSelect.currentIndex()
+        selectedGraph = self.arches_graphs_list[selectedGraphIndex]
+
+        self.geometry_nodes = []
+        self.dlg.geometryNodeSelectFrame.hide()
+
+        if selectedGraph:
+            if selectedGraph["multiple_geometry_nodes"] == True:               
+                for k,v in selectedGraph["geometry_node_data"].items():
+                    self.geometry_nodes.append({"node_id": k, "nodegroup_id": v["nodegroup_id"], "name": v["name"]})
+                self.dlg.geometryNodeSelect.clear()
+                self.dlg.geometryNodeSelect.addItems([n["name"] for n in self.geometry_nodes])
+                self.dlg.geometryNodeSelectFrame.show()
+            
+
+
+
     def create_resource(self):
         """Create Resource dialog and functionality"""
 
         def send_new_resource_to_arches():
-            if selectedGraph["nodegroup_id"] in self.arches_user_info["editable_nodegroups"]:
+            if selectedNode["nodegroup_id"] in self.arches_user_info["editable_nodegroups"]:
                 try:
                     results = self.save_to_arches(tileid=None,
-                                                nodeid = selectedGraph["node_id"],
+                                                nodeid = selectedNode["node_id"],
                                                 geometry_collection=geomcoll,
                                                 geometry_format=None,
                                                 arches_operation="create")
@@ -500,6 +526,15 @@ class ArchesProject:
         selectedLayer = self.layers[selectedLayerIndex]
         selectedGraphIndex = self.dlg.createResModelSelect.currentIndex()
         selectedGraph = self.arches_graphs_list[selectedGraphIndex]
+
+        if selectedGraph["multiple_geometry_nodes"] == True:
+            selectedNodeIndex = self.dlg.geometryNodeSelect.currentIndex()
+            selectedNode = self.geometry_nodes[selectedNodeIndex]
+
+        elif selectedGraph["multiple_geometry_nodes"] == False:
+            node_id = list(selectedGraph["geometry_node_data"].keys())[0]
+            nodegroup_id = selectedGraph["geometry_node_data"][node_id]["nodegroup_id"]
+            selectedNode = {"node_id": node_id, "nodegroup_id": nodegroup_id, "name": selectedGraph["geometry_node_data"][node_id]["name"]}
 
         geomcoll, geometry_type_dict = self.geometry_conversion(selectedLayer)
      
@@ -540,7 +575,6 @@ class ArchesProject:
                 dialog.close()
 
         def close_dialog(dialog):
-
             dialog.close()
 
 
@@ -552,8 +586,10 @@ class ArchesProject:
 
             # Get nodegroup from graph
             for graph in self.arches_graphs_list:
-                if graph["node_id"] == self.arches_selected_resource["nodeid"]:
-                    nodegroup_value = graph["nodegroup_id"]
+                for k,v in graph["geometry_node_data"].items():
+                    if k == self.arches_selected_resource["nodeid"]:
+                        nodegroup_value = v["nodegroup_id"]
+                        break
 
             # Replace geometry
             if replace == True:
@@ -720,20 +756,29 @@ class ArchesProject:
                 graphids = [x["graphid"] for x in response.json() if x["graphid"] != "ff623370-fa12-11e6-b98b-6c4008b05c4c"] # sys settings
 
                 for graph in graphids:
+                    geometry_node_data = {}
                     contains_geom = False
+                    geom_node_count = 0
+
                     req = requests.get("%s/graphs/%s" % (url, graph))
+
                     if req.json()["graph"]["publication_id"]:   # if graph is published
                         for nodes in req.json()["graph"]["nodes"]:
                             if nodes["datatype"] == "geojson-feature-collection":
-                                contains_geom=True
+                                contains_geom = True
+                                geom_node_count += 1
                                 nodegroupid = nodes["nodegroup_id"]
                                 nodeid = nodes["nodeid"]
+                                node_name = nodes["name"]
+                                geometry_node_data[nodeid] = {"nodegroup_id": nodegroupid, "name": node_name}
                         if contains_geom == True:
+                            if geom_node_count > 1: multiple = True
+                            else: multiple = False
                             self.arches_graphs_list.append({
                                 "graph_id":graph,
                                 "name":req.json()["graph"]["name"],
-                                "nodegroup_id": nodegroupid,
-                                "node_id": nodeid
+                                "geometry_node_data": geometry_node_data,
+                                "multiple_geometry_nodes": multiple
                             })
             except:
                 pass

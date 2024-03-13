@@ -26,10 +26,20 @@
   <layout class="QVBoxLayout" name="verticalLayout_15">
    <item>
     <widget class="QTabWidget" name="tabWidget">
+     <property name="font">
+      <font>
+       <bold>false</bold>
+      </font>
+     </property>
      <property name="currentIndex">
-      <number>0</number>
+      <number>1</number>
      </property>
      <widget class="QWidget" name="connection">
+      <property name="font">
+       <font>
+        <bold>false</bold>
+       </font>
+      </property>
       <attribute name="title">
        <string>Arches Connection</string>
       </attribute>
@@ -54,8 +64,19 @@
           <layout class="QVBoxLayout" name="verticalLayout_3">
            <item>
             <widget class="QGroupBox" name="groupBox">
+             <property name="font">
+              <font>
+               <bold>false</bold>
+              </font>
+             </property>
              <property name="title">
               <string>Arches Connection Details</string>
+             </property>
+             <property name="flat">
+              <bool>false</bool>
+             </property>
+             <property name="checkable">
+              <bool>false</bool>
              </property>
              <layout class="QVBoxLayout" name="verticalLayout_4">
               <item>
@@ -225,6 +246,11 @@
              <layout class="QVBoxLayout" name="verticalLayout_9">
               <item>
                <widget class="QLabel" name="label_4">
+                <property name="font">
+                 <font>
+                  <bold>false</bold>
+                 </font>
+                </property>
                 <property name="text">
                  <string>Connection Status</string>
                 </property>
@@ -302,6 +328,31 @@
                     </item>
                     <item>
                      <widget class="QComboBox" name="createResModelSelect"/>
+                    </item>
+                   </layout>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QFrame" name="geometryNodeSelectFrame">
+                   <property name="enabled">
+                    <bool>true</bool>
+                   </property>
+                   <property name="frameShape">
+                    <enum>QFrame::StyledPanel</enum>
+                   </property>
+                   <property name="frameShadow">
+                    <enum>QFrame::Raised</enum>
+                   </property>
+                   <layout class="QVBoxLayout" name="verticalLayout_18">
+                    <item>
+                     <widget class="QLabel" name="selectGeomNodeLabel">
+                      <property name="text">
+                       <string>Select Geometry Node</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QComboBox" name="geometryNodeSelect"/>
                     </item>
                    </layout>
                   </widget>

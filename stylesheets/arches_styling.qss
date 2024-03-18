@@ -1,0 +1,98 @@
+QLabel {
+    font-family: 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    color: #666;
+}
+
+QFrame {
+    background-color: #FFF;
+}
+
+QFrame#connectionButtons {
+    border: 0;
+}
+
+QTabWidget {
+    font-family: 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+QTabBar::tab {
+    background-color: #F1F1F1;
+} 
+
+QTabBar::tab:selected { 
+    background-color: #FFF;
+}
+
+QPushButton {
+    color: #FFFFFF;
+    border-style: solid;
+    line-height: 1.42857;
+    padding: 8px;
+    font-size: 16px;
+    font-family: 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-weight: 600;
+    border-radius: 0;
+}
+
+QPushButton:hover {
+    background-color: black;
+}
+
+QPushButton#btnReset {    
+    background-color: #3acaa1;
+    border-color: #42cca5;
+    color: #FFF;
+}
+
+QPushButton#btnSave {
+    background-color: #579ddb;
+    border-color: #5fa2dd;
+    color: #FFF;
+}
+
+QPushButton#addNewRes {
+    background-color: #3acaa1;
+    border-color: #42cca5;
+    color: #FFF;
+}
+
+QPushButton#addEditRes {
+    background-color: #3acaa1;
+    border-color: #42cca5;
+    color: #FFF;
+}
+
+QPushButton#replaceEditRes {
+    background-color: #3acaa1;
+    border-color: #42cca5;
+    color: #FFF;
+}
+
+QPushButton:pressed {
+    background-color: rgb(224, 0, 0);     
+}
+
+QLineEdit {
+    background-color: #FFF;
+    border-color: #aaa;
+    padding: 4px 20px 4px 5px;
+}
+
+QGroupBox {
+    font-family: 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 15px;
+    font-weight: 550;
+    color: #2f527a;
+    background-color: #FFF;
+}
+
+QWidget {
+    background-color: #FFF;
+}
+
+QComboBox {
+    font-family: 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    padding: 4px 20px 4px 5px;
+}

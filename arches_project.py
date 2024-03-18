@@ -22,9 +22,9 @@
  ***************************************************************************/
 """
 from PyQt5.QtCore import Qt
-from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication
-from qgis.PyQt.QtGui import QIcon
-from qgis.PyQt.QtWidgets import QAction, QTableView, QTableWidgetItem
+from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication, QDir
+from qgis.PyQt.QtGui import QIcon, QFontDatabase, QPixmap 
+from qgis.PyQt.QtWidgets import QAction, QTableView, QTableWidgetItem, QApplication
 from qgis.core import QgsProject, QgsVectorLayer, QgsVectorLayerCache, QgsWkbTypes
 from qgis.gui import (QgsAttributeTableView, 
                       QgsAttributeTableModel, 
@@ -44,6 +44,7 @@ from .dialog.edit_resource_add_confirmation_dialog import EditResourceAddConfirm
 from .dialog.edit_resource_replace_confirmation_dialog import EditResourceReplaceConfirmation
 
 import os.path
+import sys
 #from shapely import GeometryCollection
 import requests
 from datetime import datetime
@@ -100,7 +101,7 @@ class ArchesProject:
                                          "nodeid": "",
                                          "tileid": ""
                                         }
-        
+
 
     # noinspection PyMethodMayBeStatic
     def tr(self, message):
@@ -201,7 +202,7 @@ class ArchesProject:
             text=self.tr(u'Arches Project'),
             callback=self.run,
             parent=self.iface.mainWindow())
-
+        print(vars(self.iface))
         # will be set False in run()
         self.first_start = True
 
@@ -222,13 +223,20 @@ class ArchesProject:
         # Only create GUI ONCE in callback, so that it will only load when the plugin is started
         if self.first_start == True:
             self.first_start = False
-            self.dlg = ArchesProjectDialog()
+            self.dlg = ArchesProjectDialog()            
             self.dlg_resource_creation = CreateResourceConfirmation()
             self.dlg_edit_resource_add = EditResourceAddConfirmation()
             self.dlg_edit_resource_replace = EditResourceReplaceConfirmation()
 
+            # Setup Arches Stylesheet
+            self.stylesheet_change(on_start=True)
+            # if stylesheet is disabled
+            self.dlg.useStylesheetCheckbox.stateChanged.connect(lambda: self.stylesheet_change(on_start=False))
+
             ## Have everything called in here so multiple connections aren't made when plugin button pressed
             # This way only one connection is made at a time
+
+            # Set tab index to 0 always
             self.dlg.tabWidget.setCurrentIndex(0)
 
             # initiate the current selected layer
@@ -436,6 +444,50 @@ class ArchesProject:
 
 
 
+    def stylesheet_change(self, on_start):
+        def on_by_default():
+            try:
+                self.dlg.useStylesheetCheckbox.setChecked(True)
+                stylesheet_path = os.path.join(self.plugin_dir, "stylesheets", "arches_styling.qss")
+                with open(stylesheet_path, "r") as f:
+                    arches_styling = f.read()
+                self.dlg.setStyleSheet(arches_styling)
+                self.dlg_resource_creation.setStyleSheet(arches_styling)
+                self.dlg_edit_resource_add.setStyleSheet(arches_styling)
+                self.dlg_edit_resource_replace.setStyleSheet(arches_styling)
+
+                QDir.addSearchPath('images', os.path.join(self.plugin_dir, "img"))
+
+                self.dlg.btnSave.setIcon(QIcon(os.path.join(self.plugin_dir, "img", "ion-log-in.svg")))
+                self.dlg.btnSave.setIconSize(QtCore.QSize(24,24))
+
+                self.dlg.btnReset.setIcon(QIcon(os.path.join(self.plugin_dir, "img", "ion-arrow-undo.svg")))
+                self.dlg.btnReset.setIconSize(QtCore.QSize(24,24))
+
+
+            except:
+                self.dlg.useStylesheetCheckbox.setEnabled(False)
+                pass
+
+
+        if not self.dlg.useStylesheetCheckbox.isChecked():
+            self.dlg.setStyleSheet("")
+            self.dlg_resource_creation.setStyleSheet("")
+            self.dlg_edit_resource_add.setStyleSheet("")
+            self.dlg_edit_resource_replace.setStyleSheet("")
+            self.dlg.btnSave.setIcon(QIcon(""))
+            self.dlg.btnReset.setIcon(QIcon(""))
+
+        
+        elif self.dlg.useStylesheetCheckbox.isChecked():
+            on_by_default()
+
+        if on_start == True:
+            on_by_default()
+
+
+
+
     def geometry_conversion(self, selectedLayer):
         """Convert QGIS geometries into Arches"""
 
@@ -463,6 +515,7 @@ class ArchesProject:
         geometry_type_dict = {}
         for feature in selectedLayer.getFeatures():
             geom = feature.geometry()
+            print(geom)
             geomtype = str(geom.type()).split(".")
             if geomtype[-1] not in geometry_type_dict:
                 geometry_type_dict[geomtype[-1]] = 1

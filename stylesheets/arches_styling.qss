@@ -124,4 +124,6 @@ QWidget {
 QComboBox {
     font-family: 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
     padding: 4px 20px 4px 5px;
+    selection-background-color: #54abd9;
+    selection-color: #FFF;
 }

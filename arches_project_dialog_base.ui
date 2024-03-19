@@ -35,7 +35,7 @@
       </font>
      </property>
      <property name="currentIndex">
-      <number>3</number>
+      <number>1</number>
      </property>
      <widget class="QWidget" name="connection">
       <property name="font">
@@ -306,6 +306,13 @@
                  <enum>QFrame::Raised</enum>
                 </property>
                 <layout class="QVBoxLayout" name="verticalLayout_30">
+                 <item>
+                  <widget class="QLabel" name="loginSuccess">
+                   <property name="text">
+                    <string>You have successfully logged in!</string>
+                   </property>
+                  </widget>
+                 </item>
                  <item>
                   <widget class="QFrame" name="archesUserFrame">
                    <property name="frameShape">

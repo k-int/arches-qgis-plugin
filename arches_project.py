@@ -477,6 +477,24 @@ class ArchesProject:
                 self.dlg.replaceEditRes.setIcon(QIcon(os.path.join(self.plugin_dir, "img", "mi-replace.svg")))
                 self.dlg.replaceEditRes.setIconSize(QtCore.QSize(15,15))
 
+                self.dlg_resource_creation.createDialogCancel.setIcon(QIcon(os.path.join(self.plugin_dir, "img", "fa-times.svg")))
+                self.dlg_resource_creation.createDialogCancel.setIconSize(QtCore.QSize(15,15))
+
+                self.dlg_resource_creation.createDialogCreate.setIcon(QIcon(os.path.join(self.plugin_dir, "img", "fa-plus.svg")))
+                self.dlg_resource_creation.createDialogCreate.setIconSize(QtCore.QSize(15,15))
+
+                self.dlg_edit_resource_add.editDialogCancel.setIcon(QIcon(os.path.join(self.plugin_dir, "img", "fa-times.svg")))
+                self.dlg_edit_resource_add.editDialogCancel.setIconSize(QtCore.QSize(15,15))
+
+                self.dlg_edit_resource_add.editDialogCreate.setIcon(QIcon(os.path.join(self.plugin_dir, "img", "fa-plus.svg")))
+                self.dlg_edit_resource_add.editDialogCreate.setIconSize(QtCore.QSize(15,15))
+
+                self.dlg_edit_resource_replace.editDialogCancel.setIcon(QIcon(os.path.join(self.plugin_dir, "img", "fa-times.svg")))
+                self.dlg_edit_resource_replace.editDialogCancel.setIconSize(QtCore.QSize(15,15))
+
+                self.dlg_edit_resource_replace.editDialogCreate.setIcon(QIcon(os.path.join(self.plugin_dir, "img", "fa-times.svg")))
+                self.dlg_edit_resource_replace.editDialogCreate.setIconSize(QtCore.QSize(15,15))
+
             except:
                 self.dlg.useStylesheetCheckbox.setEnabled(False)
                 pass
@@ -525,6 +543,8 @@ class ArchesProject:
 
         # Return info for the confirmation dialog text box
         geometry_type_dict = {}
+
+        print(selectedLayer.getFeatures())
         for feature in selectedLayer.getFeatures():
             geom = feature.geometry()
             print(geom)

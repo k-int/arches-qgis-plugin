@@ -238,6 +238,7 @@ class ArchesProject:
 
             # Set tab index to 0 always
             self.dlg.tabWidget.setCurrentIndex(0)
+            self.dlg.tabWidget.setTabVisible(1, False)
 
             # initiate the current selected layer
             self.map_selection()
@@ -391,6 +392,7 @@ class ArchesProject:
 
 
 
+
     def update_map_layers(self, checkbox, combobox1, combobox2):
         """Function to update new vector layers dynamically """
 
@@ -415,6 +417,7 @@ class ArchesProject:
             combobox2.addItems([layer.name() for layer in self.layers])
             # combobox.setCurrentIndex(0)
             combobox2.blockSignals(False)
+
 
 
 
@@ -444,6 +447,7 @@ class ArchesProject:
 
 
 
+
     def stylesheet_change(self, on_start):
         def on_by_default():
             try:
@@ -459,11 +463,19 @@ class ArchesProject:
                 QDir.addSearchPath('images', os.path.join(self.plugin_dir, "img"))
 
                 self.dlg.btnSave.setIcon(QIcon(os.path.join(self.plugin_dir, "img", "ion-log-in.svg")))
-                self.dlg.btnSave.setIconSize(QtCore.QSize(24,24))
+                self.dlg.btnSave.setIconSize(QtCore.QSize(15,15))
 
                 self.dlg.btnReset.setIcon(QIcon(os.path.join(self.plugin_dir, "img", "ion-arrow-undo.svg")))
-                self.dlg.btnReset.setIconSize(QtCore.QSize(24,24))
+                self.dlg.btnReset.setIconSize(QtCore.QSize(15,15))
 
+                self.dlg.addNewRes.setIcon(QIcon(os.path.join(self.plugin_dir, "img", "mdi-pencil.svg")))
+                self.dlg.addNewRes.setIconSize(QtCore.QSize(15,15))
+
+                self.dlg.addEditRes.setIcon(QIcon(os.path.join(self.plugin_dir, "img", "fa-plus.svg")))
+                self.dlg.addEditRes.setIconSize(QtCore.QSize(15,15))
+
+                self.dlg.replaceEditRes.setIcon(QIcon(os.path.join(self.plugin_dir, "img", "mi-replace.svg")))
+                self.dlg.replaceEditRes.setIconSize(QtCore.QSize(15,15))
 
             except:
                 self.dlg.useStylesheetCheckbox.setEnabled(False)
@@ -528,6 +540,7 @@ class ArchesProject:
         geomcoll = "GEOMETRYCOLLECTION (%s)" % (','.join(all_features))
         
         return geomcoll, geometry_type_dict
+
 
 
 
@@ -680,6 +693,7 @@ class ArchesProject:
 
 
 
+
     def save_to_arches(self, tileid, nodeid, geometry_collection, geometry_format, arches_operation):
         """Save data to arches resource"""
         if self.arches_token:
@@ -715,6 +729,11 @@ class ArchesProject:
             self.dlg.arches_server_input.setText("")
             self.dlg.username_input.setText("")
             self.dlg.password_input.setText("")
+            # Replace login tab with logged in tab
+            self.dlg.tabWidget.setTabVisible(0, True)
+            self.dlg.tabWidget.setTabVisible(1, False)
+            self.dlg.tabWidget.setCurrentIndex(0)
+
         # Reset stored data
         self.arches_user_info = {}
         self.arches_connection_cache = {}
@@ -930,6 +949,16 @@ class ArchesProject:
                             self.dlg.editResSelectFeatures.clear()
                             self.dlg.editResSelectFeatures.addItems([layer.name() for layer in self.layers])
                             self.dlg.selectedResAttributeTable.setEnabled(True)
+
+                            # Replace login tab with logged in tab
+                            self.dlg.tabWidget.setTabVisible(0, False)
+                            self.dlg.tabWidget.setTabVisible(1, True)
+                            self.dlg.tabWidget.setCurrentIndex(1)
+
+                            self.dlg.displayUser.setText(f"You are logged in as user: {self.dlg.username_input.text()}")
+                            self.dlg.displayArchesURL.setText(f"Visit your Arches instance: {formatted_url}")
+                            self.dlg.displayArchesURL.setOpenExternalLinks(True)
+
 
                         else:
                             self.arches_connection_reset(hard_reset=False)

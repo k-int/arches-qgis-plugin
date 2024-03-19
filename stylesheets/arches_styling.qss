@@ -5,17 +5,24 @@ QLabel {
     color: #666;
 }
 
+
+
 QFrame {
     background-color: #FFF;
 }
 
-QFrame#connectionButtons {
+QFrame#connectionButtons, QFrame#logoutFrame, QFrame#archesURLFrame, QFrame#archesUserFrame {
     border: 0;
 }
 
+
+
 QTabWidget {
     font-family: 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    tabPosition: west;
 }
+
+
 
 QTabBar::tab {
     background-color: #F1F1F1;
@@ -24,6 +31,8 @@ QTabBar::tab {
 QTabBar::tab:selected { 
     background-color: #FFF;
 }
+
+
 
 QPushButton {
     color: #FFFFFF;
@@ -36,49 +45,41 @@ QPushButton {
     border-radius: 0;
 }
 
-QPushButton:hover {
-    background-color: black;
-}
-
-QPushButton#btnReset {    
-    background-color: #3acaa1;
-    border-color: #42cca5;
-    color: #FFF;
-}
-
 QPushButton#btnSave {
     background-color: #579ddb;
     border-color: #5fa2dd;
     color: #FFF;
 }
 
-QPushButton#addNewRes {
+QPushButton#btnSave:hover {
+    background-color: #337ab7;
+    border-color: #2e6da4;
+}
+
+QPushButton#btnReset, QPushButton#addNewRes, QPushButton#addEditRes, QPushButton#replaceEditRes, QPushButton#connectedLogoutBtn {
     background-color: #3acaa1;
     border-color: #42cca5;
     color: #FFF;
 }
 
-QPushButton#addEditRes {
-    background-color: #3acaa1;
-    border-color: #42cca5;
-    color: #FFF;
+QPushButton#btnReset:disabled, QPushButton#addNewRes:disabled, QPushButton#addEditRes:disabled, QPushButton#replaceEditRes:disabled, QPushButton#connectedLogoutBtn:disabled {
+    background-color: #89c4b4;
+    border-color: #8bcbb9;
 }
 
-QPushButton#replaceEditRes {
-    background-color: #3acaa1;
-    border-color: #42cca5;
-    color: #FFF;
+QPushButton#btnReset:hover, QPushButton#addNewRes:hover, QPushButton#addEditRes:hover, QPushButton#replaceEditRes:hover, QPushButton#connectedLogoutBtn:hover {
+    background-color: #22b78c;
+    border-color: #1d9d78;
 }
 
-QPushButton:pressed {
-    background-color: rgb(224, 0, 0);     
-}
 
 QLineEdit {
     background-color: #FFF;
     border-color: #aaa;
     padding: 4px 20px 4px 5px;
 }
+
+
 
 QGroupBox {
     font-family: 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;

@@ -35,7 +35,7 @@
       </font>
      </property>
      <property name="currentIndex">
-      <number>4</number>
+      <number>3</number>
      </property>
      <widget class="QWidget" name="connection">
       <property name="font">
@@ -92,7 +92,7 @@
                 </property>
                 <layout class="QVBoxLayout" name="verticalLayout_5">
                  <item>
-                  <widget class="QFrame" name="frame_3">
+                  <widget class="QFrame" name="frame_4">
                    <property name="frameShape">
                     <enum>QFrame::StyledPanel</enum>
                    </property>
@@ -114,7 +114,7 @@
                   </widget>
                  </item>
                  <item>
-                  <widget class="QFrame" name="frame_4">
+                  <widget class="QFrame" name="frame_3">
                    <property name="frameShape">
                     <enum>QFrame::StyledPanel</enum>
                    </property>
@@ -213,13 +213,6 @@
                   </widget>
                  </item>
                  <item>
-                  <widget class="QPushButton" name="btnReset">
-                   <property name="text">
-                    <string>Logout</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
                   <spacer name="horizontalSpacer_4">
                    <property name="orientation">
                     <enum>Qt::Horizontal</enum>
@@ -267,6 +260,165 @@
                 <property name="readOnly">
                  <bool>true</bool>
                 </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="connected">
+      <attribute name="title">
+       <string>Arches Connection</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayout_29">
+       <item>
+        <widget class="QScrollArea" name="scrollArea_5">
+         <property name="widgetResizable">
+          <bool>true</bool>
+         </property>
+         <widget class="QWidget" name="scrollAreaWidgetContents_5">
+          <property name="geometry">
+           <rect>
+            <x>0</x>
+            <y>0</y>
+            <width>518</width>
+            <height>632</height>
+           </rect>
+          </property>
+          <layout class="QVBoxLayout" name="verticalLayout_28">
+           <item>
+            <widget class="QGroupBox" name="groupBox_5">
+             <property name="title">
+              <string>Arches Connection</string>
+             </property>
+             <layout class="QVBoxLayout" name="verticalLayout_27">
+              <item>
+               <widget class="QFrame" name="frame_16">
+                <property name="frameShape">
+                 <enum>QFrame::StyledPanel</enum>
+                </property>
+                <property name="frameShadow">
+                 <enum>QFrame::Raised</enum>
+                </property>
+                <layout class="QVBoxLayout" name="verticalLayout_30">
+                 <item>
+                  <widget class="QFrame" name="archesUserFrame">
+                   <property name="frameShape">
+                    <enum>QFrame::StyledPanel</enum>
+                   </property>
+                   <property name="frameShadow">
+                    <enum>QFrame::Raised</enum>
+                   </property>
+                   <layout class="QVBoxLayout" name="verticalLayout_32">
+                    <item>
+                     <widget class="QLabel" name="displayUser">
+                      <property name="text">
+                       <string>text to display user</string>
+                      </property>
+                     </widget>
+                    </item>
+                   </layout>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QFrame" name="archesURLFrame">
+                   <property name="frameShape">
+                    <enum>QFrame::StyledPanel</enum>
+                   </property>
+                   <property name="frameShadow">
+                    <enum>QFrame::Raised</enum>
+                   </property>
+                   <layout class="QVBoxLayout" name="verticalLayout_33">
+                    <item>
+                     <widget class="QLabel" name="displayArchesURL">
+                      <property name="text">
+                       <string>arches URL</string>
+                      </property>
+                     </widget>
+                    </item>
+                   </layout>
+                  </widget>
+                 </item>
+                 <item>
+                  <spacer name="verticalSpacer_6">
+                   <property name="orientation">
+                    <enum>Qt::Vertical</enum>
+                   </property>
+                   <property name="sizeType">
+                    <enum>QSizePolicy::Fixed</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>20</width>
+                     <height>40</height>
+                    </size>
+                   </property>
+                  </spacer>
+                 </item>
+                 <item>
+                  <widget class="QFrame" name="logoutFrame">
+                   <property name="frameShape">
+                    <enum>QFrame::StyledPanel</enum>
+                   </property>
+                   <property name="frameShadow">
+                    <enum>QFrame::Raised</enum>
+                   </property>
+                   <layout class="QHBoxLayout" name="horizontalLayout_5">
+                    <item>
+                     <spacer name="horizontalSpacer_10">
+                      <property name="orientation">
+                       <enum>Qt::Horizontal</enum>
+                      </property>
+                      <property name="sizeHint" stdset="0">
+                       <size>
+                        <width>169</width>
+                        <height>20</height>
+                       </size>
+                      </property>
+                     </spacer>
+                    </item>
+                    <item>
+                     <widget class="QPushButton" name="btnReset">
+                      <property name="text">
+                       <string>Logout</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <spacer name="horizontalSpacer_11">
+                      <property name="orientation">
+                       <enum>Qt::Horizontal</enum>
+                      </property>
+                      <property name="sizeHint" stdset="0">
+                       <size>
+                        <width>169</width>
+                        <height>20</height>
+                       </size>
+                      </property>
+                     </spacer>
+                    </item>
+                   </layout>
+                  </widget>
+                 </item>
+                 <item>
+                  <spacer name="verticalSpacer_5">
+                   <property name="orientation">
+                    <enum>Qt::Vertical</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>20</width>
+                     <height>40</height>
+                    </size>
+                   </property>
+                  </spacer>
+                 </item>
+                </layout>
                </widget>
               </item>
              </layout>
@@ -433,7 +585,7 @@
                  <item>
                   <widget class="QPushButton" name="addNewRes">
                    <property name="text">
-                    <string>Add</string>
+                    <string>Create resource</string>
                    </property>
                   </widget>
                  </item>
@@ -639,14 +791,14 @@
                     <item>
                      <widget class="QPushButton" name="addEditRes">
                       <property name="text">
-                       <string>Add</string>
+                       <string>Add geometry</string>
                       </property>
                      </widget>
                     </item>
                     <item>
                      <widget class="QPushButton" name="replaceEditRes">
                       <property name="text">
-                       <string>Replace</string>
+                       <string>Replace geometry</string>
                       </property>
                      </widget>
                     </item>
@@ -750,100 +902,6 @@
                  </item>
                  <item>
                   <spacer name="verticalSpacer_4">
-                   <property name="orientation">
-                    <enum>Qt::Vertical</enum>
-                   </property>
-                   <property name="sizeHint" stdset="0">
-                    <size>
-                     <width>20</width>
-                     <height>40</height>
-                    </size>
-                   </property>
-                  </spacer>
-                 </item>
-                </layout>
-               </widget>
-              </item>
-             </layout>
-            </widget>
-           </item>
-          </layout>
-         </widget>
-        </widget>
-       </item>
-      </layout>
-     </widget>
-     <widget class="QWidget" name="connected">
-      <attribute name="title">
-       <string>Connected</string>
-      </attribute>
-      <layout class="QVBoxLayout" name="verticalLayout_29">
-       <item>
-        <widget class="QScrollArea" name="scrollArea_5">
-         <property name="widgetResizable">
-          <bool>true</bool>
-         </property>
-         <widget class="QWidget" name="scrollAreaWidgetContents_5">
-          <property name="geometry">
-           <rect>
-            <x>0</x>
-            <y>0</y>
-            <width>518</width>
-            <height>632</height>
-           </rect>
-          </property>
-          <layout class="QVBoxLayout" name="verticalLayout_28">
-           <item>
-            <widget class="QGroupBox" name="groupBox_5">
-             <property name="title">
-              <string>Arches Connection</string>
-             </property>
-             <layout class="QVBoxLayout" name="verticalLayout_27">
-              <item>
-               <widget class="QFrame" name="frame_16">
-                <property name="frameShape">
-                 <enum>QFrame::StyledPanel</enum>
-                </property>
-                <property name="frameShadow">
-                 <enum>QFrame::Raised</enum>
-                </property>
-                <layout class="QVBoxLayout" name="verticalLayout_30">
-                 <item>
-                  <widget class="QFrame" name="frame_17">
-                   <property name="frameShape">
-                    <enum>QFrame::StyledPanel</enum>
-                   </property>
-                   <property name="frameShadow">
-                    <enum>QFrame::Raised</enum>
-                   </property>
-                   <layout class="QVBoxLayout" name="verticalLayout_32">
-                    <item>
-                     <widget class="QLabel" name="label_9">
-                      <property name="text">
-                       <string>text to display user</string>
-                      </property>
-                     </widget>
-                    </item>
-                   </layout>
-                  </widget>
-                 </item>
-                 <item>
-                  <widget class="QFrame" name="frame_18">
-                   <property name="frameShape">
-                    <enum>QFrame::StyledPanel</enum>
-                   </property>
-                   <property name="frameShadow">
-                    <enum>QFrame::Raised</enum>
-                   </property>
-                   <layout class="QVBoxLayout" name="verticalLayout_33">
-                    <item>
-                     <widget class="QLineEdit" name="lineEdit"/>
-                    </item>
-                   </layout>
-                  </widget>
-                 </item>
-                 <item>
-                  <spacer name="verticalSpacer_5">
                    <property name="orientation">
                     <enum>Qt::Vertical</enum>
                    </property>

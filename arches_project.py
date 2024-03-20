@@ -239,6 +239,9 @@ class ArchesProject:
             # Set tab index to 0 always
             self.dlg.tabWidget.setCurrentIndex(0)
             self.dlg.tabWidget.setTabVisible(1, False)
+            self.dlg.tabWidget.setTabVisible(5, False)
+
+            self.dlg.enableLoggingCheckbox.stateChanged.connect(self.enable_logging)
 
             # initiate the current selected layer
             self.map_selection()
@@ -488,6 +491,17 @@ class ArchesProject:
         if on_start == True:
             on_by_default()
 
+
+
+
+    def enable_logging(self):
+        if self.dlg.enableLoggingCheckbox.isChecked():
+            self.dlg.tabWidget.setTabVisible(5, True)
+
+        elif not self.dlg.enableLoggingCheckbox.isChecked():
+            self.dlg.tabWidget.setTabVisible(5, False)
+
+        
 
 
 

@@ -254,25 +254,14 @@ class ArchesProject:
             self.dlg.createResModelSelect.setEnabled(False)
             self.dlg.createResFeatureSelect.setEnabled(False)
             self.dlg.addNewRes.setEnabled(False)
-            self.dlg.createHidePSQLLayers.setEnabled(False)
                 
             # to run when layer is changed in create resource and edit resource tabs
-            self.dlg.createResFeatureSelect.highlighted.connect(lambda: self.update_map_layers(combobox1=self.dlg.createResFeatureSelect,
-                                                                                               combobox2=self.dlg.editResSelectFeatures,
-                                                                                               checkbox=self.dlg.createHidePSQLLayers))
-            self.dlg.editResSelectFeatures.highlighted.connect(lambda: self.update_map_layers(combobox1=self.dlg.editResSelectFeatures,
-                                                                                              combobox2=self.dlg.createResFeatureSelect,
-                                                                                              checkbox=self.dlg.editHidePSQLLayers))
+            self.dlg.hidePostgresLayers.setChecked(True)
+            self.dlg.createResFeatureSelect.highlighted.connect(lambda: self.update_map_layers(checkbox=self.dlg.hidePostgresLayers))
+            self.dlg.editResSelectFeatures.highlighted.connect(lambda: self.update_map_layers(checkbox=self.dlg.hidePostgresLayers))
 
-            # psql layers checkbox
-            self.dlg.createHidePSQLLayers.stateChanged.connect(lambda: self.show_hide_psql_layers(checkbox1=self.dlg.createHidePSQLLayers,
-                                                                                                  checkbox2=self.dlg.editHidePSQLLayers,
-                                                                                                  combobox1=self.dlg.createResFeatureSelect,
-                                                                                                  combobox2=self.dlg.editResSelectFeatures))
-            self.dlg.editHidePSQLLayers.stateChanged.connect(lambda: self.show_hide_psql_layers(checkbox1=self.dlg.editHidePSQLLayers,
-                                                                                                checkbox2=self.dlg.createHidePSQLLayers,
-                                                                                                combobox1=self.dlg.editResSelectFeatures,
-                                                                                                combobox2=self.dlg.createResFeatureSelect))
+            self.dlg.hidePostgresLayers.stateChanged.connect(lambda: self.show_hide_psql_layers(combobox1=self.dlg.createResFeatureSelect,
+                                                                                                combobox2=self.dlg.editResSelectFeatures))
 
             # to run when graph is changed in create resource
             # self.dlg.createResModelSelect.currentIndexChanged.connect(self.update_graph_options)
@@ -287,7 +276,6 @@ class ArchesProject:
             self.dlg.editResSelectFeatures.setEnabled(False)
             #self.dlg.selectedResAttributeTable.setRowCount(0)
             self.dlg.selectedResAttributeTable.setEnabled(False)
-            self.dlg.editHidePSQLLayers.setEnabled(False)
 
             self.dlg.addEditRes.clicked.connect(lambda: self.edit_resource(replace=False))
             self.dlg.replaceEditRes.clicked.connect(lambda: self.edit_resource(replace=True))
@@ -393,35 +381,23 @@ class ArchesProject:
 
 
 
-    def update_map_layers(self, checkbox, combobox1, combobox2):
+    def update_map_layers(self, checkbox):
         """Function to update new vector layers dynamically """
 
-        if (checkbox.checkState()) == 2:
+        if checkbox.isChecked():
             all_current_layers = [l for l in QgsProject.instance().mapLayers().values() if l.type() == QgsVectorLayer.VectorLayer if str(l.dataProvider().name()) != "postgres"] 
         
-        elif (checkbox.checkState()) == 0:
+        elif not checkbox.isChecked():
             all_current_layers = [l for l in QgsProject.instance().mapLayers().values() if l.type() == QgsVectorLayer.VectorLayer]
-
 
         if self.layers != all_current_layers:
             self.layers = all_current_layers
 
-            combobox1.blockSignals(True)
-            combobox1.clear()
-            combobox1.addItems([layer.name() for layer in self.layers])
-            # combobox.setCurrentIndex(0)
-            combobox1.blockSignals(False)
-
-            combobox2.blockSignals(True)
-            combobox2.clear()
-            combobox2.addItems([layer.name() for layer in self.layers])
-            # combobox.setCurrentIndex(0)
-            combobox2.blockSignals(False)
 
 
 
 
-    def show_hide_psql_layers(self, checkbox1, checkbox2, combobox1, combobox2):
+    def show_hide_psql_layers(self, combobox1, combobox2):
         """Reflect change made by checkbox to show or hide PSQL layers from self.layers"""
         # TODO: Not sure I like the way this works but it works
 
@@ -431,16 +407,13 @@ class ArchesProject:
             c.addItems([layer.name() for layer in self.layers])
             c.blockSignals(False)
 
-
-        # if checkbox1 is checked then check checkbox2
-        if (checkbox1.checkState()) == 2:
-            checkbox2.setChecked(True)
+   
+        if self.dlg.hidePostgresLayers.isChecked():
             self.layers = [l for l in QgsProject.instance().mapLayers().values() if l.type() == QgsVectorLayer.VectorLayer if str(l.dataProvider().name()) != "postgres"]
             change_both_comboboxes(combobox1)
             change_both_comboboxes(combobox2)
 
-        elif (checkbox1.checkState()) == 0:
-            checkbox2.setChecked(False)
+        elif not self.dlg.hidePostgresLayers.isChecked():
             self.layers = [l for l in QgsProject.instance().mapLayers().values() if l.type() == QgsVectorLayer.VectorLayer]
             change_both_comboboxes(combobox1)
             change_both_comboboxes(combobox2)
@@ -763,7 +736,6 @@ class ArchesProject:
         self.dlg.createResModelSelect.setEnabled(False)
         self.dlg.createResFeatureSelect.setEnabled(False)
         self.dlg.addNewRes.setEnabled(False)
-        self.dlg.createHidePSQLLayers.setEnabled(False)
         self.dlg.createResOutputBox.setText("")
         ## Set "Edit Resource" to false to begin with
         self.dlg.addEditRes.setEnabled(False)
@@ -771,7 +743,6 @@ class ArchesProject:
         self.dlg.editResSelectFeatures.setEnabled(False)
         self.dlg.selectedResAttributeTable.setRowCount(0)
         self.dlg.selectedResAttributeTable.setEnabled(False)
-        self.dlg.editHidePSQLLayers.setEnabled(False)
         self.dlg.selectedResUUID.setText("Connect to your Arches instance to edit resources.")
 
 
@@ -956,12 +927,10 @@ class ArchesProject:
                                 self.dlg.createResModelSelect.addItems([graph["name"] for graph in self.arches_graphs_list])
 
                                 self.dlg.addNewRes.setEnabled(True)
-                                self.dlg.createHidePSQLLayers.setEnabled(True)
 
                             # Edit resources tab
                             self.dlg.addEditRes.setEnabled(False)
                             self.dlg.replaceEditRes.setEnabled(False)
-                            self.dlg.editHidePSQLLayers.setEnabled(True)
                             if self.arches_selected_resource["resourceinstanceid"]:
                                 self.dlg.addEditRes.setEnabled(True)
                                 self.dlg.replaceEditRes.setEnabled(True)
@@ -978,7 +947,6 @@ class ArchesProject:
                             self.dlg.displayUser.setText(f"You are logged in as user: {self.dlg.username_input.text()}")
                             self.dlg.displayArchesURL.setText(f"Visit your Arches instance: {formatted_url}")
                             self.dlg.displayArchesURL.setOpenExternalLinks(True)
-
 
                         else:
                             self.arches_connection_reset(hard_reset=False)

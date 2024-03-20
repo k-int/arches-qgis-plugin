@@ -35,7 +35,7 @@
       </font>
      </property>
      <property name="currentIndex">
-      <number>1</number>
+      <number>2</number>
      </property>
      <widget class="QWidget" name="connection">
       <property name="font">
@@ -538,16 +538,6 @@
                     <item>
                      <widget class="QComboBox" name="createResFeatureSelect"/>
                     </item>
-                    <item>
-                     <widget class="QCheckBox" name="createHidePSQLLayers">
-                      <property name="text">
-                       <string>Hide PostgreSQL layers</string>
-                      </property>
-                      <property name="checked">
-                       <bool>true</bool>
-                      </property>
-                     </widget>
-                    </item>
                    </layout>
                   </widget>
                  </item>
@@ -764,16 +754,6 @@
                   <widget class="QComboBox" name="editResSelectFeatures"/>
                  </item>
                  <item>
-                  <widget class="QCheckBox" name="editHidePSQLLayers">
-                   <property name="text">
-                    <string>Hide PostgreSQL Layers</string>
-                   </property>
-                   <property name="checked">
-                    <bool>true</bool>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
                   <widget class="QFrame" name="frame_13">
                    <property name="frameShape">
                     <enum>QFrame::StyledPanel</enum>
@@ -901,6 +881,25 @@
                       </property>
                       <property name="text">
                        <string>Use Arches theme</string>
+                      </property>
+                     </widget>
+                    </item>
+                   </layout>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QFrame" name="frame_17">
+                   <property name="frameShape">
+                    <enum>QFrame::StyledPanel</enum>
+                   </property>
+                   <property name="frameShadow">
+                    <enum>QFrame::Raised</enum>
+                   </property>
+                   <layout class="QVBoxLayout" name="verticalLayout_34">
+                    <item>
+                     <widget class="QCheckBox" name="hidePostgresLayers">
+                      <property name="text">
+                       <string>Hide PostgreSQL layers</string>
                       </property>
                      </widget>
                     </item>

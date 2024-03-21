@@ -23,7 +23,7 @@
 """
 from PyQt5.QtCore import Qt
 from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication, QDir
-from qgis.PyQt.QtGui import QIcon, QFontDatabase, QPixmap 
+from qgis.PyQt.QtGui import QIcon, QFontDatabase, QPixmap, QCursor
 from qgis.PyQt.QtWidgets import QAction, QTableView, QTableWidgetItem, QApplication
 from qgis.core import QgsProject, QgsVectorLayer, QgsVectorLayerCache, QgsWkbTypes
 from qgis.gui import (QgsAttributeTableView, 
@@ -439,37 +439,48 @@ class ArchesProject:
                 QDir.addSearchPath('images', os.path.join(self.plugin_dir, "img"))
 
                 self.dlg.btnSave.setIcon(QIcon(os.path.join(self.plugin_dir, "img", "ion-log-in.svg")))
-                self.dlg.btnSave.setIconSize(QtCore.QSize(15,15))
+                self.dlg.btnSave.setIconSize(QtCore.QSize(12,12))
+                self.dlg.btnSave.setCursor(QCursor(QtCore.Qt.PointingHandCursor))
 
                 self.dlg.btnReset.setIcon(QIcon(os.path.join(self.plugin_dir, "img", "ion-arrow-undo.svg")))
-                self.dlg.btnReset.setIconSize(QtCore.QSize(15,15))
+                self.dlg.btnReset.setIconSize(QtCore.QSize(12,12))
+                self.dlg.btnReset.setCursor(QCursor(QtCore.Qt.PointingHandCursor))
 
                 self.dlg.addNewRes.setIcon(QIcon(os.path.join(self.plugin_dir, "img", "mdi-pencil.svg")))
-                self.dlg.addNewRes.setIconSize(QtCore.QSize(15,15))
+                self.dlg.addNewRes.setIconSize(QtCore.QSize(12,12))
+                self.dlg.addNewRes.setCursor(QCursor(QtCore.Qt.PointingHandCursor))
 
                 self.dlg.addEditRes.setIcon(QIcon(os.path.join(self.plugin_dir, "img", "fa-plus.svg")))
-                self.dlg.addEditRes.setIconSize(QtCore.QSize(15,15))
+                self.dlg.addEditRes.setIconSize(QtCore.QSize(12,12))
+                self.dlg.addEditRes.setCursor(QCursor(QtCore.Qt.PointingHandCursor))
 
                 self.dlg.replaceEditRes.setIcon(QIcon(os.path.join(self.plugin_dir, "img", "mi-replace.svg")))
-                self.dlg.replaceEditRes.setIconSize(QtCore.QSize(15,15))
+                self.dlg.replaceEditRes.setIconSize(QtCore.QSize(12,12))
+                self.dlg.replaceEditRes.setCursor(QCursor(QtCore.Qt.PointingHandCursor))
 
                 self.dlg_resource_creation.createDialogCancel.setIcon(QIcon(os.path.join(self.plugin_dir, "img", "fa-times.svg")))
-                self.dlg_resource_creation.createDialogCancel.setIconSize(QtCore.QSize(15,15))
+                self.dlg_resource_creation.createDialogCancel.setIconSize(QtCore.QSize(12,12))
+                self.dlg_resource_creation.createDialogCancel.setCursor(QCursor(QtCore.Qt.PointingHandCursor))
 
                 self.dlg_resource_creation.createDialogCreate.setIcon(QIcon(os.path.join(self.plugin_dir, "img", "fa-plus.svg")))
-                self.dlg_resource_creation.createDialogCreate.setIconSize(QtCore.QSize(15,15))
+                self.dlg_resource_creation.createDialogCreate.setIconSize(QtCore.QSize(12,12))
+                self.dlg_resource_creation.createDialogCreate.setCursor(QCursor(QtCore.Qt.PointingHandCursor))
 
                 self.dlg_edit_resource_add.editDialogCancel.setIcon(QIcon(os.path.join(self.plugin_dir, "img", "fa-times.svg")))
-                self.dlg_edit_resource_add.editDialogCancel.setIconSize(QtCore.QSize(15,15))
+                self.dlg_edit_resource_add.editDialogCancel.setIconSize(QtCore.QSize(12,12))
+                self.dlg_edit_resource_add.editDialogCancel.setCursor(QCursor(QtCore.Qt.PointingHandCursor))
 
                 self.dlg_edit_resource_add.editDialogCreate.setIcon(QIcon(os.path.join(self.plugin_dir, "img", "fa-plus.svg")))
-                self.dlg_edit_resource_add.editDialogCreate.setIconSize(QtCore.QSize(15,15))
+                self.dlg_edit_resource_add.editDialogCreate.setIconSize(QtCore.QSize(12,12))
+                self.dlg_edit_resource_add.editDialogCreate.setCursor(QCursor(QtCore.Qt.PointingHandCursor))
 
                 self.dlg_edit_resource_replace.editDialogCancel.setIcon(QIcon(os.path.join(self.plugin_dir, "img", "fa-times.svg")))
-                self.dlg_edit_resource_replace.editDialogCancel.setIconSize(QtCore.QSize(15,15))
+                self.dlg_edit_resource_replace.editDialogCancel.setIconSize(QtCore.QSize(12,12))
+                self.dlg_edit_resource_replace.editDialogCancel.setCursor(QCursor(QtCore.Qt.PointingHandCursor))
 
                 self.dlg_edit_resource_replace.editDialogCreate.setIcon(QIcon(os.path.join(self.plugin_dir, "img", "fa-times.svg")))
-                self.dlg_edit_resource_replace.editDialogCreate.setIconSize(QtCore.QSize(15,15))
+                self.dlg_edit_resource_replace.editDialogCreate.setIconSize(QtCore.QSize(12,12))
+                self.dlg_edit_resource_replace.editDialogCreate.setCursor(QCursor(QtCore.Qt.PointingHandCursor))
 
             except:
                 self.dlg.useStylesheetCheckbox.setEnabled(False)

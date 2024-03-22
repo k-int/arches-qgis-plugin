@@ -307,79 +307,87 @@ class ArchesProject:
 
         active_layer = self.iface.activeLayer()
         canvas = self.iface.mapCanvas()
-        features = active_layer.selectedFeatures()
+
+        # If plugin is opened before QGIS project opened/setup selectedFeatures is None
+        try:
+            features = active_layer.selectedFeatures()
+        except AttributeError:
+            features = None
+
         print("\nmap selection has been fired because selection changed")
         print("layer:",active_layer, "features:",features)
 
-        if len(features) > 1:
-            print("Select one feature")
-            self.dlg.selectedResAttributeTable.setRowCount(0)
-            if self.arches_token:
-                self.dlg.selectedResUUID.setText("Multiple features selected, select one feature to proceed.")
+        if features:
+            
+            if len(features) > 1:
+                print("Select one feature")
+                self.dlg.selectedResAttributeTable.setRowCount(0)
+                if self.arches_token:
+                    self.dlg.selectedResUUID.setText("Multiple features selected, select one feature to proceed.")
+                else:
+                    self.dlg.selectedResUUID.setText("Connect to your Arches instance to edit resources.")
+                return
+            
+            elif len(features) == 0:
+                print("No feature selected")
+                self.dlg.selectedResAttributeTable.setRowCount(0)
+                if self.arches_token:
+                    self.dlg.selectedResUUID.setText("Select a feature to proceed.")
+                    self.dlg.addEditRes.setEnabled(False)
+                    self.dlg.replaceEditRes.setEnabled(False)
+                else:
+                    self.dlg.selectedResUUID.setText("Connect to your Arches instance to edit resources.")
+                return
+            
             else:
-                self.dlg.selectedResUUID.setText("Connect to your Arches instance to edit resources.")
-            return
-        
-        elif len(features) == 0:
-            print("No feature selected")
-            self.dlg.selectedResAttributeTable.setRowCount(0)
-            if self.arches_token:
-                self.dlg.selectedResUUID.setText("Select a feature to proceed.")
-                self.dlg.addEditRes.setEnabled(False)
-                self.dlg.replaceEditRes.setEnabled(False)
-            else:
-                self.dlg.selectedResUUID.setText("Connect to your Arches instance to edit resources.")
-            return
-        
-        else:
-            print("FEATURE SELECTED")
-            for f in features:
-                if "resourceinstanceid" in f.attributeMap():
+                print("FEATURE SELECTED")
+                for f in features:
+                    if "resourceinstanceid" in f.attributeMap():
+                        
+                        # Initialise attribute table in the plugin window if the geom is recognised as an Arches res
+                        # if initialised when arches_token exists then would have to click off and back on to recognise
+                        no_rows = len(f.attributes())
+                        no_cols = 2
+                        self.dlg.selectedResAttributeTable.setRowCount(no_rows)
+                        self.dlg.selectedResAttributeTable.setColumnCount(no_cols)
+
+                        # Fill table with attributes
+                        for i, (k, v) in enumerate(f.attributeMap().items()):
+                            feat = QTableWidgetItem(str(k))
+                            val = QTableWidgetItem(str(v))
+                            self.dlg.selectedResAttributeTable.setItem(i, 0, feat)
+                            self.dlg.selectedResAttributeTable.setItem(i, 1, val)
+                            self.dlg.selectedResAttributeTable.setRowHeight(i, 5)
+                            # Store current resource info
+                            if k == "resourceinstanceid":
+                                self.arches_selected_resource["resourceinstanceid"] = v
+                            elif k == "nodeid":
+                                self.arches_selected_resource["nodeid"] = v
+                            elif k == "tileid":
+                                self.arches_selected_resource["tileid"] = v
+
+                        self.dlg.selectedResAttributeTable.setHorizontalHeaderLabels([u'Feature',u'Values'])
+                        self.dlg.selectedResAttributeTable.resizeColumnsToContents()
+
+                        # if the token exists then enable the UI elements
+                        if self.arches_token:
+                            resource_string = "Resource: %s" % (f['resourceinstanceid'])
+                            self.dlg.selectedResUUID.setText(resource_string)
+                            self.dlg.addEditRes.setEnabled(True)
+                            self.dlg.replaceEditRes.setEnabled(True)
+
+                            # Save resource instance details once selected
+                        else:
+                            self.dlg.selectedResUUID.setText("Connect to your Arches instance to edit resources.")
+                            self.dlg.addEditRes.setEnabled(False)
+                            self.dlg.replaceEditRes.setEnabled(False)
+
                     
-                    # Initialise attribute table in the plugin window if the geom is recognised as an Arches res
-                    # if initialised when arches_token exists then would have to click off and back on to recognise
-                    no_rows = len(f.attributes())
-                    no_cols = 2
-                    self.dlg.selectedResAttributeTable.setRowCount(no_rows)
-                    self.dlg.selectedResAttributeTable.setColumnCount(no_cols)
-
-                    # Fill table with attributes
-                    for i, (k, v) in enumerate(f.attributeMap().items()):
-                        feat = QTableWidgetItem(str(k))
-                        val = QTableWidgetItem(str(v))
-                        self.dlg.selectedResAttributeTable.setItem(i, 0, feat)
-                        self.dlg.selectedResAttributeTable.setItem(i, 1, val)
-                        self.dlg.selectedResAttributeTable.setRowHeight(i, 5)
-                        # Store current resource info
-                        if k == "resourceinstanceid":
-                            self.arches_selected_resource["resourceinstanceid"] = v
-                        elif k == "nodeid":
-                            self.arches_selected_resource["nodeid"] = v
-                        elif k == "tileid":
-                            self.arches_selected_resource["tileid"] = v
-
-                    self.dlg.selectedResAttributeTable.setHorizontalHeaderLabels([u'Feature',u'Values'])
-                    self.dlg.selectedResAttributeTable.resizeColumnsToContents()
-
-                    # if the token exists then enable the UI elements
-                    if self.arches_token:
-                        resource_string = "Resource: %s" % (f['resourceinstanceid'])
-                        self.dlg.selectedResUUID.setText(resource_string)
-                        self.dlg.addEditRes.setEnabled(True)
-                        self.dlg.replaceEditRes.setEnabled(True)
-
-                        # Save resource instance details once selected
-                    else:
-                        self.dlg.selectedResUUID.setText("Connect to your Arches instance to edit resources.")
-                        self.dlg.addEditRes.setEnabled(False)
-                        self.dlg.replaceEditRes.setEnabled(False)
-
-                
-                else: 
-                    if self.arches_token:
-                        self.dlg.selectedResUUID.setText("The feature selected is not an Arches resource.")
-                    else:
-                        self.dlg.selectedResUUID.setText("Connect to your Arches instance to edit resources.")
+                    else: 
+                        if self.arches_token:
+                            self.dlg.selectedResUUID.setText("The feature selected is not an Arches resource.")
+                        else:
+                            self.dlg.selectedResUUID.setText("Connect to your Arches instance to edit resources.")
 
 
 

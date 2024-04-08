@@ -23,7 +23,7 @@
 """
 from PyQt5.QtCore import Qt
 from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication, QDir
-from qgis.PyQt.QtGui import QIcon, QFontDatabase, QPixmap, QCursor
+from qgis.PyQt.QtGui import QIcon, QFontDatabase, QPixmap, QCursor, QTransform
 from qgis.PyQt.QtWidgets import QAction, QTableView, QTableWidgetItem, QApplication
 from qgis.core import QgsProject, QgsVectorLayer, QgsVectorLayerCache, QgsWkbTypes
 from qgis.gui import (QgsAttributeTableView, 
@@ -202,7 +202,7 @@ class ArchesProject:
             text=self.tr(u'Arches Project'),
             callback=self.run,
             parent=self.iface.mainWindow())
-        print(vars(self.iface))
+
         # will be set False in run()
         self.first_start = True
 
@@ -439,6 +439,11 @@ class ArchesProject:
                 stylesheet_path = os.path.join(self.plugin_dir, "stylesheets", "arches_styling.qss")
                 with open(stylesheet_path, "r") as f:
                     arches_styling = f.read()
+
+                # self.dlg.setAutoFillBackground(False)
+                # self.dlg.setContentsMargins(0,0,0,0)
+                # # self.dlg.setStyleSheet("QDialog{background-color: green;}")
+
                 self.dlg.setStyleSheet(arches_styling)
                 self.dlg_resource_creation.setStyleSheet(arches_styling)
                 self.dlg_edit_resource_add.setStyleSheet(arches_styling)
@@ -490,19 +495,79 @@ class ArchesProject:
                 self.dlg_edit_resource_replace.editDialogCreate.setIconSize(QtCore.QSize(12,12))
                 self.dlg_edit_resource_replace.editDialogCreate.setCursor(QCursor(QtCore.Qt.PointingHandCursor))
 
+                self.dlg.tabWidget.setDocumentMode(True)
+
+                self.dlg.tabWidget.setTabIcon(0, QIcon(QPixmap(os.path.join(self.plugin_dir, "img", "mdi-connection.svg")).transformed(QTransform().rotate(90))))
+                self.dlg.tabWidget.setIconSize(QtCore.QSize(20,20))
+                self.dlg.tabWidget.setTabText(0, "")
+
+                self.dlg.tabWidget.setTabIcon(1, QIcon(QPixmap(os.path.join(self.plugin_dir, "img", "ti-home.svg")).transformed(QTransform().rotate(90))))
+                self.dlg.tabWidget.setIconSize(QtCore.QSize(20,20))
+                self.dlg.tabWidget.setTabText(1, "")
+
+                self.dlg.tabWidget.setTabIcon(2, QIcon(QPixmap(os.path.join(self.plugin_dir, "img", "fa-building.svg")).transformed(QTransform().rotate(90))))
+                self.dlg.tabWidget.setIconSize(QtCore.QSize(20,20))
+                self.dlg.tabWidget.setTabText(2, "")
+
+                self.dlg.tabWidget.setTabIcon(3, QIcon(QPixmap(os.path.join(self.plugin_dir, "img", "mdi-pencil.svg")).transformed(QTransform().rotate(90))))
+                self.dlg.tabWidget.setIconSize(QtCore.QSize(20,20))
+                self.dlg.tabWidget.setTabText(3, "")
+
+                self.dlg.tabWidget.setTabIcon(4, QIcon(QPixmap(os.path.join(self.plugin_dir, "img", "fa-cog.svg")).transformed(QTransform().rotate(90))))
+                self.dlg.tabWidget.setIconSize(QtCore.QSize(20,20))
+                self.dlg.tabWidget.setTabText(4, "")
+
+                self.dlg.tabWidget.setTabIcon(5, QIcon(QPixmap(os.path.join(self.plugin_dir, "img", "ti-ticket.svg")).transformed(QTransform().rotate(90))))
+                self.dlg.tabWidget.setIconSize(QtCore.QSize(20,20))
+                self.dlg.tabWidget.setTabText(5, "")
+
+
             except:
+                # Prevent the use of the Arches stylesheet if error occurs
+                default_stylesheet()
                 self.dlg.useStylesheetCheckbox.setEnabled(False)
-                pass
+                self.dlg.useStylesheetCheckbox.setChecked(False)
 
 
-        if not self.dlg.useStylesheetCheckbox.isChecked():
+        def default_stylesheet():
+            # reset stylesheets
             self.dlg.setStyleSheet("")
             self.dlg_resource_creation.setStyleSheet("")
             self.dlg_edit_resource_add.setStyleSheet("")
             self.dlg_edit_resource_replace.setStyleSheet("")
+            # remove icons from buttons
             self.dlg.btnSave.setIcon(QIcon(""))
             self.dlg.btnReset.setIcon(QIcon(""))
+            self.dlg.addNewRes.setIcon(QIcon(""))
+            self.dlg.addEditRes.setIcon(QIcon(""))
+            self.dlg.replaceEditRes.setIcon(QIcon(""))
+            self.dlg_resource_creation.createDialogCancel.setIcon(QIcon(""))
+            self.dlg_resource_creation.createDialogCreate.setIcon(QIcon(""))
+            self.dlg_edit_resource_add.editDialogCancel.setIcon(QIcon(""))
+            self.dlg_edit_resource_add.editDialogCreate.setIcon(QIcon(""))
+            self.dlg_edit_resource_replace.editDialogCancel.setIcon(QIcon(""))
+            self.dlg_edit_resource_replace.editDialogCreate.setIcon(QIcon(""))
+            # nav bar
+            # TODO: don't like the fact I have to add the exact strings (from qtcreator) back to the tab titles, seems like could be a better method...
+            self.dlg.tabWidget.setStyleSheet(" QTabWidget {qproperty-tabPosition: North;} ")
+            self.dlg.tabWidget.setStyleSheet("")
 
+            self.dlg.tabWidget.setAutoFillBackground(False)
+            self.dlg.tabWidget.setTabIcon(0, QIcon(""))
+            self.dlg.tabWidget.setTabText(0, "Arches Connection")
+            self.dlg.tabWidget.setTabIcon(1, QIcon(""))
+            self.dlg.tabWidget.setTabText(1, "Arches Connection")
+            self.dlg.tabWidget.setTabIcon(2, QIcon(""))
+            self.dlg.tabWidget.setTabText(2, "Create Resource")
+            self.dlg.tabWidget.setTabIcon(3, QIcon(""))
+            self.dlg.tabWidget.setTabText(3, "Edit Resource")
+            self.dlg.tabWidget.setTabIcon(4, QIcon(""))
+            self.dlg.tabWidget.setTabText(4, "Settings")
+            self.dlg.tabWidget.setTabIcon(5, QIcon(""))
+            self.dlg.tabWidget.setTabText(5, "Log")
+
+        if not self.dlg.useStylesheetCheckbox.isChecked():
+            default_stylesheet()
         
         elif self.dlg.useStylesheetCheckbox.isChecked():
             on_by_default()

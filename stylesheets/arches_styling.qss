@@ -1,16 +1,25 @@
+QTabWidget {
+    qproperty-tabPosition: West;
+    font-family: 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+
+QWidget {
+    background-color: #FFF;
+}
+
+
 QLabel {
     font-family: 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
     font-size: 13px;
     font-weight: 500;
     color: #666;
 }
-
 QLabel#loginSuccess {
     font-size: 15px;
     font-weight: 550;
     color: #2f527a;
 }
-
 
 
 QTextEdit {
@@ -21,32 +30,29 @@ QTextEdit {
 }
 
 
-
 QFrame {
     background-color: #FFF;
 }
-
 QFrame#connectionButtons, QFrame#logoutFrame, QFrame#archesURLFrame, QFrame#archesUserFrame {
     border: 0;
 }
 
 
 
-QTabWidget {
-    font-family: 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
-    tabPosition: west;
+QTabBar {
+    background-color: #2d3c4b;
 }
-
-
-
 QTabBar::tab {
-    background-color: #F1F1F1;
+    background-color: #2d3c4b;
+    width: 50px;
+    length: 40px;
 } 
-
 QTabBar::tab:selected { 
-    background-color: #FFF;
+    background-color: #2986b8;    
 }
-
+QTabBar::tab:hover {
+    background-color: #212121;
+}
 
 
 QPushButton {
@@ -59,42 +65,34 @@ QPushButton {
     font-weight: 600;
     border-radius: 0;
 }
-
 QPushButton#btnSave {
     background-color: #579ddb;
     border-color: #5fa2dd;
 }
-
 QPushButton#btnSave:hover {
     background-color: #337ab7;
     border-color: #2e6da4;
 }
-
 QPushButton#btnReset, QPushButton#addNewRes, QPushButton#addEditRes, QPushButton#replaceEditRes, QPushButton#connectedLogoutBtn, QPushButton#createDialogCreate, QPushButton#editDialogCreate {
     background-color: #3acaa1;
     border-color: #42cca5;
 }
-
 QPushButton#btnReset:disabled, QPushButton#addNewRes:disabled, QPushButton#addEditRes:disabled, QPushButton#replaceEditRes:disabled, QPushButton#connectedLogoutBtn:disabled, QPushButton#createDialogCreate:disabled, QPushButton#editDialogCreate:disabled {
     background-color: #89c4b4;
     border-color: #8bcbb9;
 }
-
 QPushButton#btnReset:hover, QPushButton#addNewRes:hover, QPushButton#addEditRes:hover, QPushButton#replaceEditRes:hover, QPushButton#connectedLogoutBtn:hover, QPushButton#createDialogCreate:hover, QPushButton#editDialogCreate:hover {
     background-color: #22b78c;
     border-color: #1d9d78;
 }
-
 QPushButton#editDialogCancel, QPushButton#createDialogCancel {
     background-color: #f75d3f;
     border-color: #E53211;
 }
-
 QPushButton#editDialogCancel:hover, QPushButton#createDialogCancel:hover {
     background-color: #f53610;
     border-color: #fc2f09;
 }
-
 
 
 QLineEdit {
@@ -104,7 +102,6 @@ QLineEdit {
 }
 
 
-
 QGroupBox {
     font-family: 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
     font-size: 15px;
@@ -112,13 +109,6 @@ QGroupBox {
     color: #2f527a;
     background-color: #FFF;
 }
-
-
-
-QWidget {
-    background-color: #FFF;
-}
-
 
 
 QComboBox {

@@ -449,76 +449,76 @@ class ArchesProject:
                 self.dlg_edit_resource_add.setStyleSheet(arches_styling)
                 self.dlg_edit_resource_replace.setStyleSheet(arches_styling)
 
-                QDir.addSearchPath('images', os.path.join(self.plugin_dir, "img"))
+                QDir.addSearchPath('images', os.path.join(self.plugin_dir, "icons"))
 
-                self.dlg.btnSave.setIcon(QIcon(os.path.join(self.plugin_dir, "img", "ion-log-in.svg")))
+                self.dlg.btnSave.setIcon(QIcon(os.path.join(self.plugin_dir, "icons", "ion-log-in.svg")))
                 self.dlg.btnSave.setIconSize(QtCore.QSize(12,12))
                 self.dlg.btnSave.setCursor(QCursor(QtCore.Qt.PointingHandCursor))
 
-                self.dlg.btnReset.setIcon(QIcon(os.path.join(self.plugin_dir, "img", "ion-arrow-undo.svg")))
+                self.dlg.btnReset.setIcon(QIcon(os.path.join(self.plugin_dir, "icons", "ion-arrow-undo.svg")))
                 self.dlg.btnReset.setIconSize(QtCore.QSize(12,12))
                 self.dlg.btnReset.setCursor(QCursor(QtCore.Qt.PointingHandCursor))
 
-                self.dlg.addNewRes.setIcon(QIcon(os.path.join(self.plugin_dir, "img", "mdi-pencil.svg")))
+                self.dlg.addNewRes.setIcon(QIcon(os.path.join(self.plugin_dir, "icons", "mdi-pencil.svg")))
                 self.dlg.addNewRes.setIconSize(QtCore.QSize(12,12))
                 self.dlg.addNewRes.setCursor(QCursor(QtCore.Qt.PointingHandCursor))
 
-                self.dlg.addEditRes.setIcon(QIcon(os.path.join(self.plugin_dir, "img", "fa-plus.svg")))
+                self.dlg.addEditRes.setIcon(QIcon(os.path.join(self.plugin_dir, "icons", "fa-plus.svg")))
                 self.dlg.addEditRes.setIconSize(QtCore.QSize(12,12))
                 self.dlg.addEditRes.setCursor(QCursor(QtCore.Qt.PointingHandCursor))
 
-                self.dlg.replaceEditRes.setIcon(QIcon(os.path.join(self.plugin_dir, "img", "mi-replace.svg")))
+                self.dlg.replaceEditRes.setIcon(QIcon(os.path.join(self.plugin_dir, "icons", "mi-replace.svg")))
                 self.dlg.replaceEditRes.setIconSize(QtCore.QSize(12,12))
                 self.dlg.replaceEditRes.setCursor(QCursor(QtCore.Qt.PointingHandCursor))
 
-                self.dlg_resource_creation.createDialogCancel.setIcon(QIcon(os.path.join(self.plugin_dir, "img", "fa-times.svg")))
+                self.dlg_resource_creation.createDialogCancel.setIcon(QIcon(os.path.join(self.plugin_dir, "icons", "fa-times.svg")))
                 self.dlg_resource_creation.createDialogCancel.setIconSize(QtCore.QSize(12,12))
                 self.dlg_resource_creation.createDialogCancel.setCursor(QCursor(QtCore.Qt.PointingHandCursor))
 
-                self.dlg_resource_creation.createDialogCreate.setIcon(QIcon(os.path.join(self.plugin_dir, "img", "fa-plus.svg")))
+                self.dlg_resource_creation.createDialogCreate.setIcon(QIcon(os.path.join(self.plugin_dir, "icons", "fa-plus.svg")))
                 self.dlg_resource_creation.createDialogCreate.setIconSize(QtCore.QSize(12,12))
                 self.dlg_resource_creation.createDialogCreate.setCursor(QCursor(QtCore.Qt.PointingHandCursor))
 
-                self.dlg_edit_resource_add.editDialogCancel.setIcon(QIcon(os.path.join(self.plugin_dir, "img", "fa-times.svg")))
+                self.dlg_edit_resource_add.editDialogCancel.setIcon(QIcon(os.path.join(self.plugin_dir, "icons", "fa-times.svg")))
                 self.dlg_edit_resource_add.editDialogCancel.setIconSize(QtCore.QSize(12,12))
                 self.dlg_edit_resource_add.editDialogCancel.setCursor(QCursor(QtCore.Qt.PointingHandCursor))
 
-                self.dlg_edit_resource_add.editDialogCreate.setIcon(QIcon(os.path.join(self.plugin_dir, "img", "fa-plus.svg")))
+                self.dlg_edit_resource_add.editDialogCreate.setIcon(QIcon(os.path.join(self.plugin_dir, "icons", "fa-plus.svg")))
                 self.dlg_edit_resource_add.editDialogCreate.setIconSize(QtCore.QSize(12,12))
                 self.dlg_edit_resource_add.editDialogCreate.setCursor(QCursor(QtCore.Qt.PointingHandCursor))
 
-                self.dlg_edit_resource_replace.editDialogCancel.setIcon(QIcon(os.path.join(self.plugin_dir, "img", "fa-times.svg")))
+                self.dlg_edit_resource_replace.editDialogCancel.setIcon(QIcon(os.path.join(self.plugin_dir, "icons", "fa-times.svg")))
                 self.dlg_edit_resource_replace.editDialogCancel.setIconSize(QtCore.QSize(12,12))
                 self.dlg_edit_resource_replace.editDialogCancel.setCursor(QCursor(QtCore.Qt.PointingHandCursor))
 
-                self.dlg_edit_resource_replace.editDialogCreate.setIcon(QIcon(os.path.join(self.plugin_dir, "img", "fa-times.svg")))
+                self.dlg_edit_resource_replace.editDialogCreate.setIcon(QIcon(os.path.join(self.plugin_dir, "icons", "fa-times.svg")))
                 self.dlg_edit_resource_replace.editDialogCreate.setIconSize(QtCore.QSize(12,12))
                 self.dlg_edit_resource_replace.editDialogCreate.setCursor(QCursor(QtCore.Qt.PointingHandCursor))
 
                 self.dlg.tabWidget.setDocumentMode(True)
 
-                self.dlg.tabWidget.setTabIcon(0, QIcon(QPixmap(os.path.join(self.plugin_dir, "img", "mdi-connection.svg")).transformed(QTransform().rotate(90))))
-                self.dlg.tabWidget.setIconSize(QtCore.QSize(20,20))
+                self.dlg.tabWidget.setTabIcon(0, QIcon(QPixmap(os.path.join(self.plugin_dir, "icons", "mdi-connection.svg")).transformed(QTransform().rotate(90))))
+                self.dlg.tabWidget.setIconSize(QtCore.QSize(16,16))
                 self.dlg.tabWidget.setTabText(0, "")
 
-                self.dlg.tabWidget.setTabIcon(1, QIcon(QPixmap(os.path.join(self.plugin_dir, "img", "ti-home.svg")).transformed(QTransform().rotate(90))))
-                self.dlg.tabWidget.setIconSize(QtCore.QSize(20,20))
+                self.dlg.tabWidget.setTabIcon(1, QIcon(QPixmap(os.path.join(self.plugin_dir, "icons", "ti-home.svg")).transformed(QTransform().rotate(90))))
+                self.dlg.tabWidget.setIconSize(QtCore.QSize(16,16))
                 self.dlg.tabWidget.setTabText(1, "")
 
-                self.dlg.tabWidget.setTabIcon(2, QIcon(QPixmap(os.path.join(self.plugin_dir, "img", "fa-building.svg")).transformed(QTransform().rotate(90))))
-                self.dlg.tabWidget.setIconSize(QtCore.QSize(20,20))
+                self.dlg.tabWidget.setTabIcon(2, QIcon(QPixmap(os.path.join(self.plugin_dir, "icons", "fa-building.svg")).transformed(QTransform().rotate(90))))
+                self.dlg.tabWidget.setIconSize(QtCore.QSize(16,16))
                 self.dlg.tabWidget.setTabText(2, "")
 
-                self.dlg.tabWidget.setTabIcon(3, QIcon(QPixmap(os.path.join(self.plugin_dir, "img", "mdi-pencil.svg")).transformed(QTransform().rotate(90))))
-                self.dlg.tabWidget.setIconSize(QtCore.QSize(20,20))
+                self.dlg.tabWidget.setTabIcon(3, QIcon(QPixmap(os.path.join(self.plugin_dir, "icons", "mdi-pencil.svg")).transformed(QTransform().rotate(90))))
+                self.dlg.tabWidget.setIconSize(QtCore.QSize(16,16))
                 self.dlg.tabWidget.setTabText(3, "")
 
-                self.dlg.tabWidget.setTabIcon(4, QIcon(QPixmap(os.path.join(self.plugin_dir, "img", "fa-cog.svg")).transformed(QTransform().rotate(90))))
-                self.dlg.tabWidget.setIconSize(QtCore.QSize(20,20))
+                self.dlg.tabWidget.setTabIcon(4, QIcon(QPixmap(os.path.join(self.plugin_dir, "icons", "fa-cog.svg")).transformed(QTransform().rotate(90))))
+                self.dlg.tabWidget.setIconSize(QtCore.QSize(16,16))
                 self.dlg.tabWidget.setTabText(4, "")
 
-                self.dlg.tabWidget.setTabIcon(5, QIcon(QPixmap(os.path.join(self.plugin_dir, "img", "ti-ticket.svg")).transformed(QTransform().rotate(90))))
-                self.dlg.tabWidget.setIconSize(QtCore.QSize(20,20))
+                self.dlg.tabWidget.setTabIcon(5, QIcon(QPixmap(os.path.join(self.plugin_dir, "icons", "ti-ticket.svg")).transformed(QTransform().rotate(90))))
+                self.dlg.tabWidget.setIconSize(QtCore.QSize(16,16))
                 self.dlg.tabWidget.setTabText(5, "")
 
 

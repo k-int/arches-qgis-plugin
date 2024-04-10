@@ -640,12 +640,14 @@ class ArchesProject:
         selectedGraph = self.arches_graphs_list[selectedGraphIndex]
 
         self.geometry_nodes = []
+        self.dlg.geometryNodeSelect.setEnabled(False)
         self.dlg.geometryNodeSelectFrame.hide()
 
         if selectedGraph:
             if selectedGraph["multiple_geometry_nodes"] == True:               
                 for k,v in selectedGraph["geometry_node_data"].items():
                     self.geometry_nodes.append({"node_id": k, "nodegroup_id": v["nodegroup_id"], "name": v["name"]})
+                self.dlg.geometryNodeSelect.setEnabled(True)
                 self.dlg.geometryNodeSelect.clear()
                 self.dlg.geometryNodeSelect.addItems([n["name"] for n in self.geometry_nodes])
                 self.dlg.geometryNodeSelectFrame.show()
@@ -842,6 +844,8 @@ class ArchesProject:
         self.dlg.selectedResAttributeTable.setRowCount(0)
         self.dlg.selectedResAttributeTable.setEnabled(False)
         self.dlg.selectedResUUID.setText("Connect to your Arches instance to edit resources.")
+        # Hide multiple nodegroup dropdown
+        self.dlg.geometryNodeSelect.setEnabled(False)
 
 
 
